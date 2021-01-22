@@ -1,0 +1,70 @@
+declare
+v_step varchar2(10);
+v_update_table varchar2(30);
+v_updated_records number(10);
+v_pk_rd_ws varchar2(20);
+v_sql varchar2(1000);
+v_temp_table varchar2(40);
+v_temp_count number(10);
+v_dest_context number(10);
+begin
+  V_STEP := 'Step 1';
+  pack_log.log_write('I','F','RESULTS_COPY_FROM_CTX1_TO_CTX2',v_step,'RESULTS_COPY_FROM_CTX1_TO_CTX2 procedure starts');
+
+  v_src_context := 50; -- Harcoded as of now; This will be automated once we know that whether WS or pos is going to be same across entities and processes
+  v_dest_context := 48; -- Harcoded as of now; This will be automated once we know that whether WS or pos is going to be same across entities and processes
+  
+  --select pk_rd_ws into v_pk_rd_ws from contexts where context_id = v_dest_context;
+  v_temp_table := 'T_ALM_ANALYTICS_' || v_dest_context || '_TMP';
+  pack_context.contextid_open(v_dest_context);
+  v_sql := 'create table ' || v_temp_table || ' as select * from t_alm_analytics';
+  execute immediate v_sql;
+  v_sql := 'select count(1) into v_temp_count from ' || v_temp_table ;
+  execute immediate v_sql;
+
+  V_STEP := 'Step 2';
+  pack_log.log_write('I', 'F', 'RESULTS_COPY_FROM_CTX1_TO_CTX2', v_step, 'Temp table: '|| v_temp_table || 'created with ' || v_temp_count || ' records, to store existing data of destination context:'|| v_dest_context );
+
+
+  pack_context.context_copy_table(v_table_name => 'T_ALM_ANALYTICS', v_dest_context_id =>v_dest_context, v_src_context_id=>v_src_context); -- it truncates destination and puts source data
+
+  V_STEP := 'Step 3';
+  pack_log.log_write('I', 'F', 'RESULTS_COPY_FROM_CTX1_TO_CTX2', v_step, 'T_ALM_ANALYTICS data copied from source context '||  || ' to target context '|| );
+  
+  
+  pack_context.contextid_open(v_dest_context);
+  --update t_alm_analytics set entity_attribute_19 = 'WS'; -- avoid direct update
+  -- fast_update
+  v_updated_records := fast_update_from( auxiliary_tabname => v_update_table, table_to_update => 'T_ALM_ANALYTICS'
+  , update_cols => 'ENTITY_ATTRIBUTE_19', from_sql =>
+  'select t.rowid as rowid_, ''WS'' as entity_attribute_19 FROM T_ALM_ANALYTICS t'
+  ,key_cols => 'rowid_');
+  commit;
+  
+  V_STEP := 'Step 4';
+  pack_log.log_write('I', 'F', 'RESULTS_COPY_FROM_CTX1_TO_CTX2', v_step, 'T_ALM_ANALYTICS data copied from source context '||  || ' to target context '|| );
+  
+  
+  v_sql := 'insert into t_alm_analytics select * from ' || v_temp_table || '';
+  execute immediate v_sql;
+  commit;
+  
+  V_STEP := 'Step 5';
+  pack_log.log_write('I', 'F', 'RESULTS_COPY_FROM_CTX1_TO_CTX2', v_step, 'T_ALM_ANALYTICS data copied from temp table '|| v_temp_table || ' to target t_alm_analytics table of target context '|| );
+    
+  
+  
+  /* Code to manipulate data (commented as of now since requirement freeze till results copying - starts */
+  /* pack_context.contextid_open(v_dest_context);
+  v_updated_records := fast_update_from( auxiliary_tabname => v_update_table, table_to_update => 'T_ALM_ANALYTICS'
+  , update_cols => 'ENTITY_ATTRIBUTE_18', from_sql =>
+  'select t.rowid as rowid_, 11 as entity_attribute_18 FROM T_ALM_ANALYTICS t where entity_attribute_19 = ''WS'' '
+  ,key_cols => 'rowid_');
+  V_STEP := 'Step X';
+  pack_log.log_write('I','F','RESULTS_COPY_FROM_CTX1_TO_CTX2',v_step,'recods updated in t_alm_analytics.entity_attribute_19: ' ||v_updated_records|| ' rows');
+  COMMIT; */
+  /* Code to manipulate data - ends */
+  
+  V_STEP := 'Step End';
+  pack_log.log_write('I','F','RESULTS_COPY_FROM_CTX1_TO_CTX2',v_step,'RESULTS_COPY_FROM_CTX1_TO_CTX2 procedure ends');
+  end;
