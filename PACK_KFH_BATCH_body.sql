@@ -1703,15 +1703,17 @@ end KFH_SAE_DM_RCO_BAH_RET;
 PROCEDURE KFH_MALAYSIA_RESULTS is
 curr_time date;
 v_function varchar(100):='PACK_KFH_BATCH.KFH_MALAYSIA_RESULTS';
+v_text_prefix_ctx_ret varchar2(100):='COPIED FROM MALAYSIA LOCAL RETAIL CONTEXT: ';
+v_text_prefix_ctx_whs varchar2(100):='COPIED FROM MALAYSIA LOCAL WHOLESALE CONTEXT: ';
 
 v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
-v_table_1_column varchar2(50):='';
+v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
 
 v_table_2_name varchar2(50):='DEAL_RESULT';
-v_table_2_column varchar2(50):='';
+v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
 
 v_table_3_name varchar2(50):='DIMENSION_RESULT';
-v_table_3_column varchar2(50):='';
+v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
 
 v_ws_id_my_ret number;
 v_ws_id_my_whs number;
@@ -1727,6 +1729,12 @@ v_src_context_my_ret number;
 
 v_delete_sql varchar2(1000);
 
+v_rerun_my_local_ret varchar2(100);
+v_rerun_my_local_whs varchar2(100);
+
+v_count_sql varchar2(1000);
+v_row_count number;
+
 begin
 
 select to_date(value,'YYYYMMDD') into v_context_rd from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
@@ -1735,65 +1743,96 @@ select position into v_pos_local from position where description like 'IFRS9 - U
 select workspace_id into v_ws_id_my_results from workspaces where name like 'MALAYSIA_RESULTS';
 select context_id into v_dest_context_id from contexts where reporting_date = v_context_rd and workspace_id = v_ws_id_my_results and position = v_pos_local;
 
-pack_context.contextid_open(v_dest_context_id);
-v_delete_sql := 'delete from ' || v_table_1_name;
-execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_2_name;
-execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_3_name;
-execute immediate v_delete_sql;
-
 IF v_context_rd IS NOT NULL THEN
 
 pack_log.log_write('I','F',v_function,'Step 0','Starting data copy on Malaysia Results Context ID: ' || v_dest_context_id || ' with RD: ' || v_context_rd || ', WS: ' || v_ws_id_my_results || ', pos: ' || v_pos_local || '.');
 select workspace_id into v_ws_id_my_whs from workspaces where name like 'MALAYSIA';
 select context_id into v_src_context_my_whs from contexts where workspace_id = v_ws_id_my_whs and position = v_pos_local and reporting_date = v_context_rd;
 
+select value into v_rerun_my_local_ret from kfh_custom_parameters where parameter like 'RERUN_RCO_MALAYSIA_LOCAL_RETAIL';
+select value into v_rerun_my_local_whs from kfh_custom_parameters where parameter like 'RERUN_RCO_MALAYSIA_LOCAL_WHOLESALE';
+pack_log.log_write('I','F',v_function,'Step 0.1','Rerun parameters in KFH_CUSTOM_PARAMETERS are RERUN_RCO_MALAYSIA_LOCAL_RETAIL = ' || v_rerun_my_local_ret || ' ,RERUN_RCO_MALAYSIA_LOCAL_WHOLESALE = '||v_rerun_my_local_whs);
+
+pack_context.contextid_open(v_dest_context_id);
+
+if (v_rerun_my_local_whs = 'Y') then
+v_delete_sql := 'delete from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_delete_sql;
+v_delete_sql := 'delete from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_delete_sql;
+v_delete_sql := 'delete from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_delete_sql;
+end if;
+
+v_count_sql := 'select count(1) from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_my_whs, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_my_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_ctx_whs || v_src_context_my_whs);
 pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+end if;
 
+v_count_sql := 'select count(1) from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_my_whs, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_my_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_ctx_whs || v_src_context_my_whs);
 pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+end if;
 
+v_count_sql := 'select count(1) from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 5',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_my_whs, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_my_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_3_column, v_identifier_text => v_text_prefix_ctx_whs || v_src_context_my_whs);
 pack_log.log_write('I','F',v_function,'Step 6',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
+end if;
 
 select workspace_id into v_ws_id_my_ret from workspaces where name like 'MALAYSIA_RETAIL';
 select context_id into v_src_context_my_ret from contexts where workspace_id = v_ws_id_my_ret and position = v_pos_local and reporting_date = v_context_rd;
 
+if (v_rerun_my_local_ret = 'Y') then
+v_delete_sql := 'delete from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_delete_sql;
+v_delete_sql := 'delete from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_delete_sql;
+v_delete_sql := 'delete from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_delete_sql;
+end if;
+
+v_count_sql := 'select count(1) from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 7',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_my_ret, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_my_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_ctx_ret || v_src_context_my_ret);
 pack_log.log_write('I','F',v_function,'Step 8',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+end if;
 
+v_count_sql := 'select count(1) from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 9',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_my_ret, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_my_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_ctx_ret || v_src_context_my_ret);
 pack_log.log_write('I','F',v_function,'Step 10',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+end if;
 
+v_count_sql := 'select count(1) from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 11',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_my_ret, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_my_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_3_column, v_identifier_text => v_text_prefix_ctx_ret || v_src_context_my_ret);
 pack_log.log_write('I','F',v_function,'Step 12',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+end if;
+
+update kfh_custom_parameters set value = 'N' where parameter like 'RERUN_RCO_MALAYSIA_LOCAL_RETAIL';
+update kfh_custom_parameters set value = 'N' where parameter like 'RERUN_RCO_MALAYSIA_LOCAL_WHOLESALE';
+commit;
 
 END IF;
 
@@ -1807,15 +1846,17 @@ end KFH_MALAYSIA_RESULTS;
 PROCEDURE KFH_BAHRAIN_RESULTS is
 curr_time date;
 v_function varchar(100):='PACK_KFH_BATCH.KFH_BAHRAIN_RESULTS';
+v_text_prefix_ctx_ret varchar2(100):='COPIED FROM BAHRAIN LOCAL RETAIL CONTEXT: ';
+v_text_prefix_ctx_whs varchar2(100):='COPIED FROM BAHRAIN LOCAL WHOLESALE CONTEXT: ';
 
 v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
-v_table_1_column varchar2(50):='';
+v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
 
 v_table_2_name varchar2(50):='DEAL_RESULT';
-v_table_2_column varchar2(50):='';
+v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
 
 v_table_3_name varchar2(50):='DIMENSION_RESULT';
-v_table_3_column varchar2(50):='';
+v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
 
 v_ws_id_bah_ret number;
 v_ws_id_bah_whs number;
@@ -1831,6 +1872,12 @@ v_src_context_bah_ret number;
 
 v_delete_sql varchar2(1000);
 
+v_rerun_bah_local_ret varchar2(100);
+v_rerun_bah_local_whs varchar2(100);
+
+v_count_sql varchar2(1000);
+v_row_count number;
+
 begin
 
 select to_date(value,'YYYYMMDD') into v_context_rd from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
@@ -1839,65 +1886,96 @@ select position into v_pos_local from position where description like 'IFRS9 - U
 select workspace_id into v_ws_id_bah_results from workspaces where name like 'BAHRAIN_RESULTS';
 select context_id into v_dest_context_id from contexts where reporting_date = v_context_rd and workspace_id = v_ws_id_bah_results and position = v_pos_local;
 
-pack_context.contextid_open(v_dest_context_id);
-v_delete_sql := 'delete from ' || v_table_1_name;
-execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_2_name;
-execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_3_name;
-execute immediate v_delete_sql;
-
 IF v_context_rd IS NOT NULL THEN
 
-pack_log.log_write('I','F',v_function,'Step 0','Starting data copy on Malaysia Results Context ID: ' || v_dest_context_id || ' with RD: ' || v_context_rd || ', WS: ' || v_ws_id_bah_results || ', pos: ' || v_pos_local || '.');
+pack_log.log_write('I','F',v_function,'Step 0','Starting data copy on Bahrain Results Context ID: ' || v_dest_context_id || ' with RD: ' || v_context_rd || ', WS: ' || v_ws_id_bah_results || ', pos: ' || v_pos_local || '.');
 select workspace_id into v_ws_id_bah_whs from workspaces where name like 'BAHRAIN';
 select context_id into v_src_context_bah_whs from contexts where workspace_id = v_ws_id_bah_whs and position = v_pos_local and reporting_date = v_context_rd;
 
+select value into v_rerun_bah_local_ret from kfh_custom_parameters where parameter like 'RERUN_RCO_BAHRAIN_LOCAL_RETAIL';
+select value into v_rerun_bah_local_whs from kfh_custom_parameters where parameter like 'RERUN_RCO_BAHRAIN_LOCAL_WHOLESALE';
+pack_log.log_write('I','F',v_function,'Step 0.1','Rerun parameters in KFH_CUSTOM_PARAMETERS are RERUN_RCO_BAHRAIN_LOCAL_RETAIL = ' || v_rerun_bah_local_ret || ' ,RERUN_RCO_BAHRAIN_LOCAL_WHOLESALE = '||v_rerun_bah_local_whs);
+
+pack_context.contextid_open(v_dest_context_id);
+
+if (v_rerun_bah_local_whs = 'Y') then
+v_delete_sql := 'delete from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_delete_sql;
+v_delete_sql := 'delete from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_delete_sql;
+v_delete_sql := 'delete from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_delete_sql;
+end if;
+
+v_count_sql := 'select count(1) from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_ctx_whs || v_src_context_bah_whs);
 pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+end if;
 
+v_count_sql := 'select count(1) from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_ctx_whs || v_src_context_bah_whs);
 pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+end if;
 
+v_count_sql := 'select count(1) from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_ctx_whs || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 5',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_3_column, v_identifier_text => v_text_prefix_ctx_whs || v_src_context_bah_whs);
 pack_log.log_write('I','F',v_function,'Step 6',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
+end if;
 
 select workspace_id into v_ws_id_bah_ret from workspaces where name like 'BAHRAIN_RETAIL';
 select context_id into v_src_context_bah_ret from contexts where workspace_id = v_ws_id_bah_ret and position = v_pos_local and reporting_date = v_context_rd;
 
+if (v_rerun_bah_local_ret = 'Y') then
+v_delete_sql := 'delete from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_delete_sql;
+v_delete_sql := 'delete from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_delete_sql;
+v_delete_sql := 'delete from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_delete_sql;
+end if;
+
+v_count_sql := 'select count(1) from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 7',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_ctx_ret || v_src_context_bah_ret);
 pack_log.log_write('I','F',v_function,'Step 8',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+end if;
 
+v_count_sql := 'select count(1) from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 9',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_ctx_ret || v_src_context_bah_ret);
 pack_log.log_write('I','F',v_function,'Step 10',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+end if;
 
+v_count_sql := 'select count(1) from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_ctx_ret || '%''';
+execute immediate v_count_sql into v_row_count;
+if(v_row_count = 0) then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 11',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
+KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_3_column, v_identifier_text => v_text_prefix_ctx_ret || v_src_context_bah_ret);
 pack_log.log_write('I','F',v_function,'Step 12',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+end if;
+
+update kfh_custom_parameters set value = 'N' where parameter like 'RERUN_RCO_BAHRAIN_LOCAL_RETAIL';
+update kfh_custom_parameters set value = 'N' where parameter like 'RERUN_RCO_BAHRAIN_LOCAL_WHOLESALE';
+commit;
 
 END IF;
 
@@ -1911,15 +1989,16 @@ end KFH_BAHRAIN_RESULTS;
 PROCEDURE KFH_KUWAIT_RESULTS is
 curr_time date;
 v_function varchar(100):='PACK_KFH_BATCH.KFH_KUWAIT_RESULTS';
+v_text_prefix varchar2(100):='Copied from Data context: ';
 
 v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
-v_table_1_column varchar2(50):='';
+v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
 
 v_table_2_name varchar2(50):='DEAL_RESULT';
-v_table_2_column varchar2(50):='';
+v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
 
 v_table_3_name varchar2(50):='DIMENSION_RESULT';
-v_table_3_column varchar2(50):='';
+v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
 
 v_ws_id_bah_ret number;
 v_ws_id_bah_whs number;
@@ -1936,80 +2015,81 @@ v_src_context_bah_ret number;
 v_delete_sql varchar2(1000);
 
 begin
-
-select to_date(value,'YYYYMMDD') into v_context_rd from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
-
-select position into v_pos_local from position where description like 'IFRS9 - UAT';
-select workspace_id into v_ws_id_bah_results from workspaces where name like 'BAHRAIN_RESULTS';
-select context_id into v_dest_context_id from contexts where reporting_date = v_context_rd and workspace_id = v_ws_id_bah_results and position = v_pos_local;
-
-pack_context.contextid_open(v_dest_context_id);
-v_delete_sql := 'delete from ' || v_table_1_name;
-execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_2_name;
-execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_3_name;
-execute immediate v_delete_sql;
-
-IF v_context_rd IS NOT NULL THEN
-
-pack_log.log_write('I','F',v_function,'Step 0','Starting data copy on Malaysia Results Context ID: ' || v_dest_context_id || ' with RD: ' || v_context_rd || ', WS: ' || v_ws_id_bah_results || ', pos: ' || v_pos_local || '.');
-select workspace_id into v_ws_id_bah_whs from workspaces where name like 'BAHRAIN';
-select context_id into v_src_context_bah_whs from contexts where workspace_id = v_ws_id_bah_whs and position = v_pos_local and reporting_date = v_context_rd;
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
-pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
-pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 5',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
-pack_log.log_write('I','F',v_function,'Step 6',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-
-select workspace_id into v_ws_id_bah_ret from workspaces where name like 'BAHRAIN_RETAIL';
-select context_id into v_src_context_bah_ret from contexts where workspace_id = v_ws_id_bah_ret and position = v_pos_local and reporting_date = v_context_rd;
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 7',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
-pack_log.log_write('I','F',v_function,'Step 8',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 9',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
-pack_log.log_write('I','F',v_function,'Step 10',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 11',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_context.contextid_open(v_dest_context_id);
-KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id);
-pack_context.contextid_disable();
-pack_log.log_write('I','F',v_function,'Step 12',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-END IF;
-
-EXCEPTION
-    WHEN OTHERS THEN
-	curr_time:=sysdate;
-	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-
+null;
+--
+--select to_date(value,'YYYYMMDD') into v_context_rd from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
+--
+--select position into v_pos_local from position where description like 'IFRS9 - UAT';
+--select workspace_id into v_ws_id_bah_results from workspaces where name like 'BAHRAIN_RESULTS';
+--select context_id into v_dest_context_id from contexts where reporting_date = v_context_rd and workspace_id = v_ws_id_bah_results and position = v_pos_local;
+--
+--pack_context.contextid_open(v_dest_context_id);
+--v_delete_sql := 'delete from ' || v_table_1_name;
+--execute immediate v_delete_sql;
+--v_delete_sql := 'delete from ' || v_table_2_name;
+--execute immediate v_delete_sql;
+--v_delete_sql := 'delete from ' || v_table_3_name;
+--execute immediate v_delete_sql;
+--
+--IF v_context_rd IS NOT NULL THEN
+--
+--pack_log.log_write('I','F',v_function,'Step 0','Starting data copy on Malaysia Results Context ID: ' || v_dest_context_id || ' with RD: ' || v_context_rd || ', WS: ' || v_ws_id_bah_results || ', pos: ' || v_pos_local || '.');
+--select workspace_id into v_ws_id_bah_whs from workspaces where name like 'BAHRAIN';
+--select context_id into v_src_context_bah_whs from contexts where workspace_id = v_ws_id_bah_whs and position = v_pos_local and reporting_date = v_context_rd;
+--
+--curr_time:=sysdate;
+--pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
+--pack_context.contextid_open(v_dest_context_id);
+--KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id);
+--pack_context.contextid_disable();
+--pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+--
+--curr_time:=sysdate;
+--pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
+--pack_context.contextid_open(v_dest_context_id);
+--KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id);
+--pack_context.contextid_disable();
+--pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+--
+--curr_time:=sysdate;
+--pack_log.log_write('I','F',v_function,'Step 5',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
+--pack_context.contextid_open(v_dest_context_id);
+--KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_bah_whs, v_dest_context =>v_dest_context_id);
+--pack_context.contextid_disable();
+--pack_log.log_write('I','F',v_function,'Step 6',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+--
+--
+--select workspace_id into v_ws_id_bah_ret from workspaces where name like 'BAHRAIN_RETAIL';
+--select context_id into v_src_context_bah_ret from contexts where workspace_id = v_ws_id_bah_ret and position = v_pos_local and reporting_date = v_context_rd;
+--
+--curr_time:=sysdate;
+--pack_log.log_write('I','F',v_function,'Step 7',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
+--pack_context.contextid_open(v_dest_context_id);
+--KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id);
+--pack_context.contextid_disable();
+--pack_log.log_write('I','F',v_function,'Step 8',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+--
+--curr_time:=sysdate;
+--pack_log.log_write('I','F',v_function,'Step 9',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
+--pack_context.contextid_open(v_dest_context_id);
+--KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id);
+--pack_context.contextid_disable();
+--pack_log.log_write('I','F',v_function,'Step 10',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+--
+--curr_time:=sysdate;
+--pack_log.log_write('I','F',v_function,'Step 11',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
+--pack_context.contextid_open(v_dest_context_id);
+--KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_bah_ret, v_dest_context =>v_dest_context_id);
+--pack_context.contextid_disable();
+--pack_log.log_write('I','F',v_function,'Step 12',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+--
+--END IF;
+--
+--EXCEPTION
+--    WHEN OTHERS THEN
+--	curr_time:=sysdate;
+--	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
+--
 end KFH_KUWAIT_RESULTS;
 
 END PACK_KFH_BATCH;
