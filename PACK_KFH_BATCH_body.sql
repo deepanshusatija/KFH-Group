@@ -1349,12 +1349,12 @@ pack_log.log_write('I','F',v_function,v_step, 'JOB ID: '|| dm_rco_job_id || ' is
 res:= -99;
 return res;
 end if;
-
-V_STEP := 'Step 6';
-pack_log.log_write('I','F',v_function,v_step, 'Copying results to RESULTS Context, before it gets overridden');
-PACK_KFH_BATCH.KFH_KWT_CBK_WHS_RESULTS_MID();
-V_STEP := 'Step 7';
-pack_log.log_write('I','F',v_function,v_step, 'Results COPIED to RESULTS Context');
+--
+--V_STEP := 'Step 6';
+--pack_log.log_write('I','F',v_function,v_step, 'Copying results to RESULTS Context, before it gets overridden');
+--PACK_KFH_BATCH.KFH_KWT_CBK_WHS_RESULTS_MID();
+--V_STEP := 'Step 7';
+--pack_log.log_write('I','F',v_function,v_step, 'Results COPIED to RESULTS Context');
 
 
 V_STEP := 'Step 8';
@@ -1521,11 +1521,11 @@ res:= -99;
 return res;
 end if;
 
-V_STEP := 'Step 8';
-pack_log.log_write('I','F',v_function,v_step, 'Copying results to RESULTS Context, before it gets overridden');
-PACK_KFH_BATCH.KFH_MY_CBK_WHS_RESULTS_MID();
-V_STEP := 'Step 9';
-pack_log.log_write('I','F',v_function,v_step, 'Results COPIED to RESULTS Context');
+--V_STEP := 'Step 8';
+--pack_log.log_write('I','F',v_function,v_step, 'Copying results to RESULTS Context, before it gets overridden');
+--PACK_KFH_BATCH.KFH_MY_CBK_WHS_RESULTS_MID();
+--V_STEP := 'Step 9';
+--pack_log.log_write('I','F',v_function,v_step, 'Results COPIED to RESULTS Context');
 
 V_STEP := 'Step 10';
 pack_log.log_write('I','F',v_function,v_step, 'Starting third RCO for Context ID: ' || v_context_id);
@@ -1688,11 +1688,11 @@ res:= -99;
 return res;
 end if;
 
-V_STEP := 'Step 8';
-pack_log.log_write('I','F',v_function,v_step, 'Copying results to RESULTS Context, before it gets overridden');
-PACK_KFH_BATCH.KFH_BAH_CBK_WHS_RESULTS_MID();
-V_STEP := 'Step 9';
-pack_log.log_write('I','F',v_function,v_step, 'Results COPIED to RESULTS Context');
+--V_STEP := 'Step 8';
+--pack_log.log_write('I','F',v_function,v_step, 'Copying results to RESULTS Context, before it gets overridden');
+--PACK_KFH_BATCH.KFH_BAH_CBK_WHS_RESULTS_MID();
+--V_STEP := 'Step 9';
+--pack_log.log_write('I','F',v_function,v_step, 'Results COPIED to RESULTS Context');
 
 V_STEP := 'Step 9';
 pack_log.log_write('I','F',v_function,v_step, 'Starting third RCO for Context ID: ' || v_context_id);
@@ -1720,389 +1720,6 @@ EXCEPTION
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress');
 
 end KFH_DM_RCO_BAHRAIN_CBK_WS;
-
-procedure KFH_SAE_BAHRAIN_RETAIL is
-v_function varchar2(100) := 'PACK_KFH_BATCH.KFH_SAE_BAHRAIN_RETAIL';
-v_step varchar2(20);
-v_rd_id date;
-v_ws_id number;
-v_pos_id number := 101;
-v_context_id number;
-curr_time date;
-x number;
-wf_id number;
-sae_status varchar2(50);
-process_id number;
-c number;
-
-begin
-null;
---V_STEP := 'Step 1';
---pack_log.log_write('I','F',v_function,v_step, v_function ||' procedure starts');
---
---select to_date(value,'YYYYMMDD') into v_rd_id from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
---IF v_rd_id IS NOT NULL THEN
---select workspace_id into v_ws_id from workspaces where name like 'BAHRAIN_RETAIL';
-----select position into v_pos_id from position where description like 'IFRS9 - UAT';
---select context_id into v_context_id from contexts where workspace_id = v_ws_id and position = v_pos_id and reporting_date = v_rd_id;
---
---V_STEP := 'Step 2';
---pack_log.log_write('I','F',v_function,v_step, 'Starting SAE for Context ID: ' || v_context_id);
---curr_time:= sysdate;
---pack_context.contextid_open(v_context_id);
---select max(workflow_id) into wf_id from workflow where description like 'SAE_BAHRAIN_RETAIL';
---if wf_id is not null then
---V_STEP := 'Step 3';
---pack_log.log_write('I','F',v_function,v_step, 'Starting WF:' || wf_id || ' for SAE for Context ID: ' || v_context_id);
---x:=pack_fts_client.launch_workflow(v_workflow_id=>wf_id);
---select id into process_id from sae_proc_setting where name like 'Bahrain PD Projection Workflow' and active = 'Y';
---V_STEP := 'Step 4';
---pack_log.log_write('I','F',v_function,v_step, 'WF:' || wf_id || ' for SAE started with process ID: ' || process_id || ' for Context ID: ' || v_context_id);
---
-----loop
-----dbms_lock.sleep(60);
-----select status into sae_status from sae_process where proc_setting_id = process_id;
-----pack_log.log_write('I','F',v_function,'Counter '|| c, 'SAE process ID: ' || process_id || ' sae_status: ' || sae_status);
-----c:=c+1;
-----exit when upper(sae_status) <> 'STARTED';
-----dbms_lock.sleep(300);
-----end loop;
---
---end if;
---
---V_STEP := 'Step 5';
---pack_log.log_write('I','F',v_function,v_step, 'SAE completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
---
---end if;
---
---EXCEPTION
---    WHEN OTHERS THEN
---	curr_time:=sysdate;
---	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress');
-
-end KFH_SAE_BAHRAIN_RETAIL;
-
-procedure KFH_SAE_MALAYSIA_RETAIL is
-v_function varchar2(100) := 'PACK_KFH_BATCH.KFH_SAE_MALAYSIA_RETAIL';
-v_step varchar2(20);
-v_rd_id date;
-v_ws_id number;
-v_pos_id number := 101;
-v_context_id number;
-curr_time date;
-x number;
-wf_id number;
-sae_status varchar2(50);
-process_id number;
-
-begin
-null;
---V_STEP := 'Step 1';
---pack_log.log_write('I','F',v_function,v_step, v_function ||' procedure starts');
---
---select to_date(value,'YYYYMMDD') into v_rd_id from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
---IF v_rd_id IS NOT NULL THEN
---select workspace_id into v_ws_id from workspaces where name like 'MALAYSIA_RETAIL';
-----select position into v_pos_id from position where description like 'IFRS9 - UAT';
---select context_id into v_context_id from contexts where workspace_id = v_ws_id and position = v_pos_id and reporting_date = v_rd_id;
---
---V_STEP := 'Step 2';
---pack_log.log_write('I','F',v_function,v_step, 'Starting SAE for Context ID: ' || v_context_id);
---curr_time:= sysdate;
---pack_context.contextid_open(v_context_id);
---select max(workflow_id) into wf_id from workflow where description like 'SAE_MALAYSIA_RETAIL';
---if wf_id is not null then
---V_STEP := 'Step 3';
---pack_log.log_write('I','F',v_function,v_step, 'Starting WF:' || wf_id || ' for SAE for Context ID: ' || v_context_id);
---x:=pack_fts_client.launch_workflow(v_workflow_id=>wf_id);
---select id into process_id from sae_proc_setting where name like 'KFH_MALAYSIA_FULL_RUN' and active = 'Y';
---V_STEP := 'Step 4';
---pack_log.log_write('I','F',v_function,v_step, 'WF:' || wf_id || ' for SAE started with process ID: ' || process_id || ' for Context ID: ' || v_context_id);
---loop
---dbms_lock.sleep(60);
---select status into sae_status from sae_process where proc_setting_id = process_id;
---exit when upper(sae_status) <> 'STARTED';
---dbms_lock.sleep(10);
---end loop;
---end if;
---
---V_STEP := 'Step 5';
---pack_log.log_write('I','F',v_function,v_step, 'SAE completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
---
---end if;
---
---EXCEPTION
---    WHEN OTHERS THEN
---	curr_time:=sysdate;
---	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress');
-
-end KFH_SAE_MALAYSIA_RETAIL;
-
-procedure KFH_SAE_KUWAIT_RETAIL_PF is
-v_function varchar2(100) := 'PACK_KFH_BATCH.KFH_SAE_KUWAIT_RETAIL_PF';
-v_step varchar2(20);
-v_rd_id date;
-v_ws_id number;
-v_pos_id number := 201;
-v_context_id number;
-curr_time date;
-x number;
-wf_id number;
-sae_status varchar2(50);
-process_id number;
-
-begin
-null;
---V_STEP := 'Step 1';
---pack_log.log_write('I','F',v_function,v_step, v_function ||' procedure starts');
---
---select to_date(value,'YYYYMMDD') into v_rd_id from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
---IF v_rd_id IS NOT NULL THEN
---select workspace_id into v_ws_id from workspaces where name like 'KUWAIT_RETAIL';
-----select position into v_pos_id from position where description like 'Final - Adjusted Maturities';
---select context_id into v_context_id from contexts where workspace_id = v_ws_id and position = v_pos_id and reporting_date = v_rd_id;
---
---V_STEP := 'Step 2';
---pack_log.log_write('I','F',v_function,v_step, 'Starting SAE for Context ID: ' || v_context_id);
---curr_time:= sysdate;
---pack_context.contextid_open(v_context_id);
---select max(workflow_id) into wf_id from workflow where description like 'SAE_KUWAIT_RETAIL_PF';
---if wf_id is not null then
---V_STEP := 'Step 3';
---pack_log.log_write('I','F',v_function,v_step, 'Starting WF:' || wf_id || ' for SAE for Context ID: ' || v_context_id);
---x:=pack_fts_client.launch_workflow(v_workflow_id=>wf_id);
---select id into process_id from sae_proc_setting where name like 'Kuwait Personal Finance ' and active = 'Y';
---V_STEP := 'Step 4';
---pack_log.log_write('I','F',v_function,v_step, 'WF:' || wf_id || ' for SAE started with process ID: ' || process_id || ' for Context ID: ' || v_context_id);
---loop
---dbms_lock.sleep(60);
---select status into sae_status from sae_process where proc_setting_id = process_id;
---exit when upper(sae_status) <> 'STARTED';
---dbms_lock.sleep(10);
---end loop;
---end if;
---
---V_STEP := 'Step 5';
---pack_log.log_write('I','F',v_function,v_step, 'SAE completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
---
---end if;
---
---EXCEPTION
---    WHEN OTHERS THEN
---	curr_time:=sysdate;
---	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress');
-
-end KFH_SAE_KUWAIT_RETAIL_PF;
-
-procedure KFH_SAE_KUWAIT_RETAIL_CC is
-v_function varchar2(100) := 'PACK_KFH_BATCH.KFH_SAE_KUWAIT_RETAIL_CC';
-v_step varchar2(20);
-v_rd_id date;
-v_ws_id number;
-v_pos_id number := 201;
-v_context_id number;
-curr_time date;
-x number;
-wf_id number;
-sae_status varchar2(50);
-process_id number;
-
-begin
-null;
---V_STEP := 'Step 1';
---pack_log.log_write('I','F',v_function,v_step, v_function ||' procedure starts');
---
---select to_date(value,'YYYYMMDD') into v_rd_id from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
---IF v_rd_id IS NOT NULL THEN
---select workspace_id into v_ws_id from workspaces where name like 'KUWAIT_RETAIL';
-----select position into v_pos_id from position where description like 'Final - Adjusted Maturities';
---select context_id into v_context_id from contexts where workspace_id = v_ws_id and position = v_pos_id and reporting_date = v_rd_id;
---
---V_STEP := 'Step 2';
---pack_log.log_write('I','F',v_function,v_step, 'Starting SAE for Context ID: ' || v_context_id);
---curr_time:= sysdate;
---pack_context.contextid_open(v_context_id);
---select max(workflow_id) into wf_id from workflow where description like 'SAE_KUWAIT_RETAIL_CC';
---if wf_id is not null then
---V_STEP := 'Step 3';
---pack_log.log_write('I','F',v_function,v_step, 'Starting WF:' || wf_id || ' for SAE for Context ID: ' || v_context_id);
---x:=pack_fts_client.launch_workflow(v_workflow_id=>wf_id);
---select id into process_id from sae_proc_setting where name like 'Kuwait Credit Card PD Projection Workflow v0.1' and active = 'Y';
---V_STEP := 'Step 4';
---pack_log.log_write('I','F',v_function,v_step, 'WF:' || wf_id || ' for SAE started with process ID: ' || process_id || ' for Context ID: ' || v_context_id);
---loop
---dbms_lock.sleep(60);
---select status into sae_status from sae_process where proc_setting_id = process_id;
---exit when upper(sae_status) <> 'STARTED';
---dbms_lock.sleep(10);
---end loop;
---end if;
---
---V_STEP := 'Step 5';
---pack_log.log_write('I','F',v_function,v_step, 'SAE completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
---
---end if;
---
---EXCEPTION
---    WHEN OTHERS THEN
---	curr_time:=sysdate;
---	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress');
-
-end KFH_SAE_KUWAIT_RETAIL_CC;
-
-procedure KFH_SAE_BAHRAIN_CBK_RETAIL is
-v_function varchar2(100) := 'PACK_KFH_BATCH.KFH_SAE_BAHRAIN_CBK_RETAIL';
-v_step varchar2(20);
-v_rd_id date;
-v_ws_id number;
-v_pos_id number := 101;
-v_context_id number;
-curr_time date;
-x number;
-wf_id number;
-sae_status varchar2(50);
-process_id number;
-
-begin
-null;
---V_STEP := 'Step 1';
---pack_log.log_write('I','F',v_function,v_step, v_function ||' procedure starts');
---
---select to_date(value,'YYYYMMDD') into v_rd_id from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
---IF v_rd_id IS NOT NULL THEN
---select workspace_id into v_ws_id from workspaces where name like 'BAHRAIN_CBK_RETAIL';
-----select position into v_pos_id from position where description like 'IFRS9 - UAT';
---select context_id into v_context_id from contexts where workspace_id = v_ws_id and position = v_pos_id and reporting_date = v_rd_id;
---
---V_STEP := 'Step 2';
---pack_log.log_write('I','F',v_function,v_step, 'Starting SAE for Context ID: ' || v_context_id);
---curr_time:= sysdate;
---pack_context.contextid_open(v_context_id);
---select max(workflow_id) into wf_id from workflow where description like 'SAE_BAHRAIN_CBK_RETAIL';
---if wf_id is not null then
---V_STEP := 'Step 3';
---pack_log.log_write('I','F',v_function,v_step, 'Starting WF:' || wf_id || ' for SAE for Context ID: ' || v_context_id);
---x:=pack_fts_client.launch_workflow(v_workflow_id=>wf_id);
---select id into process_id from sae_proc_setting where name like 'Bahrain PD Projection Workflow' and active = 'Y';
---V_STEP := 'Step 4';
---pack_log.log_write('I','F',v_function,v_step, 'WF:' || wf_id || ' for SAE started with process ID: ' || process_id || ' for Context ID: ' || v_context_id);
---loop
---dbms_lock.sleep(60);
---select status into sae_status from sae_process where proc_setting_id = process_id;
---exit when upper(sae_status) <> 'STARTED';
---dbms_lock.sleep(10);
---end loop;
---end if;
---
---V_STEP := 'Step 5';
---pack_log.log_write('I','F',v_function,v_step, 'SAE completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
---
---end if;
---
---EXCEPTION
---    WHEN OTHERS THEN
---	curr_time:=sysdate;
---	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress');
-
-end KFH_SAE_BAHRAIN_CBK_RETAIL;
-
-procedure KFH_SAE_MALAYSIA_CBK_RETAIL is
-v_function varchar2(100) := 'PACK_KFH_BATCH.KFH_SAE_MALAYSIA_CBK_RETAIL';
-v_step varchar2(20);
-v_rd_id date;
-v_ws_id number;
-v_pos_id number := 201;
-v_context_id number;
-curr_time date;
-x number;
-wf_id number;
-sae_status varchar2(50);
-process_id number;
-
-begin
-null;
---V_STEP := 'Step 1';
---pack_log.log_write('I','F',v_function,v_step, v_function ||' procedure starts');
---
---select to_date(value,'YYYYMMDD') into v_rd_id from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
---IF v_rd_id IS NOT NULL THEN
---select workspace_id into v_ws_id from workspaces where name like 'MALAYSIA_CBK_RETAIL';
-----select position into v_pos_id from position where description like 'IFRS9 - UAT';
---select context_id into v_context_id from contexts where workspace_id = v_ws_id and position = v_pos_id and reporting_date = v_rd_id;
---
---V_STEP := 'Step 2';
---pack_log.log_write('I','F',v_function,v_step, 'Starting SAE for Context ID: ' || v_context_id);
---curr_time:= sysdate;
---pack_context.contextid_open(v_context_id);
---select max(workflow_id) into wf_id from workflow where description like 'SAE_MALAYSIA_CBK_RETAIL';
---if wf_id is not null then
---V_STEP := 'Step 3';
---pack_log.log_write('I','F',v_function,v_step, 'Starting WF:' || wf_id || ' for SAE for Context ID: ' || v_context_id);
---x:=pack_fts_client.launch_workflow(v_workflow_id=>wf_id);
---select id into process_id from sae_proc_setting where name like 'KFH_MALAYSIA_FULL_RUN' and active = 'Y';
---V_STEP := 'Step 4';
---pack_log.log_write('I','F',v_function,v_step, 'WF:' || wf_id || ' for SAE started with process ID: ' || process_id || ' for Context ID: ' || v_context_id);
---loop
---dbms_lock.sleep(60);
---select status into sae_status from sae_process where proc_setting_id = process_id;
---exit when upper(sae_status) <> 'STARTED';
---dbms_lock.sleep(10);
---end loop;
---end if;
---
---V_STEP := 'Step 5';
---pack_log.log_write('I','F',v_function,v_step, 'SAE completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
---
---end if;
---
---EXCEPTION
---    WHEN OTHERS THEN
---	curr_time:=sysdate;
---	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress');
-
-end KFH_SAE_MALAYSIA_CBK_RETAIL;
-
-procedure KFH_SAE_DM_RCO_BAH_RET is
-v_function varchar2(100) := 'PACK_KFH_BATCH.KFH_SAE_DM_RCO_BAH_RET';
-v_step varchar2(20);
-curr_time date;
-process_id number;
-sae_status varchar2(50);
-c number:=1;
-v_sql varchar2(2000);
-
-begin
-null;
---v_step:='Step 1';
---pack_log.log_write('I','F',v_function,v_step, 'started at ' || to_char(sysdate,'dd-mon-yyyy hh24:mi:ss'));
---curr_time:= sysdate;
---pack_kfh_batch.KFH_SAE_BAHRAIN_RETAIL();
---
---select id into process_id from sae_proc_setting where name like 'Bahrain PD Projection Workflow' and active = 'Y';
---v_step:='Step 1.1';
---pack_log.log_write('I','F',v_function,v_step, 'SAE process ID is: ' || process_id || ' and time taken to reach this step is ' || round(((sysdate-curr_time)*100000/60),2));
---
---dbms_lock.sleep(10);
---loop
---pack_log.log_write('I','F',v_function,'Cnt:'|| c, 'Enter loop - SAE process ID: ' || process_id || ' sae_status: ' || sae_status);
---select status into sae_status from sae_process where proc_setting_id = process_id;
---
---pack_log.log_write('I','F',v_function,'Cnt: '|| c, 'SAE process ID: ' || process_id || ' sae_status: ' || sae_status);
---commit;
---c:=c+1;
---exit when upper(sae_status) = 'COMPLETED';
---dbms_lock.sleep(10);
---end loop;
---
---v_step:='Step 2';
---pack_log.log_write('I','F',v_function,v_step, 'sae completed and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
---
---curr_time:= sysdate;
---pack_kfh_batch.KFH_DM_RCO_BAHRAIN_RETAIL();
---v_step:='Step 3';
---pack_log.log_write('I','F',v_function,v_step, 'DM RCO completed and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-end KFH_SAE_DM_RCO_BAH_RET;
 
 PROCEDURE KFH_MALAYSIA_RET_RESULTS is
 curr_time date;
@@ -2175,7 +1792,6 @@ EXCEPTION
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
 
 end KFH_MALAYSIA_RET_RESULTS;
-
 
 PROCEDURE KFH_MALAYSIA_WHS_RESULTS is
 curr_time date;
@@ -2321,7 +1937,6 @@ EXCEPTION
 
 end KFH_BAHRAIN_RET_RESULTS;
 
-
 PROCEDURE KFH_BAHRAIN_WHS_RESULTS is
 curr_time date;
 v_function varchar(100):='PACK_KFH_BATCH.KFH_BAHRAIN_WHS_RESULTS';
@@ -2401,9 +2016,11 @@ v_text_prefix_kwt_ret varchar2(100):='COPIED FROM KUWAIT RETAIL CONTEXT: ';
 
 v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
 v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
+v_table_1_where_clause varchar2(500):='SCENARIO_ID = 0'; 
 
 v_table_2_name varchar2(50):='DEAL_RESULT';
 v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
+v_table_2_where_clause varchar2(500):='ANALYSIS_SCENARIO_CODE like ''Probability Weighted Scenario'''; 
 
 v_table_3_name varchar2(50):='DIMENSION_RESULT';
 v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
@@ -2443,12 +2060,12 @@ execute immediate v_delete_sql;
 
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_kwt_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_kwt_ret || v_src_context_kwt_ret,v_where_clause=>null);
+KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_kwt_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_kwt_ret || v_src_context_kwt_ret,v_where_clause=>v_table_1_where_clause);
 pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_kwt_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_kwt_ret || v_src_context_kwt_ret,v_where_clause=>null);
+KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_kwt_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_kwt_ret || v_src_context_kwt_ret,v_where_clause=>v_table_2_where_clause);
 pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
 curr_time:=sysdate;
@@ -2465,17 +2082,23 @@ EXCEPTION
 
 end KFH_KUWAIT_RET_RESULTS;
 
-
 PROCEDURE KFH_KUWAIT_WHS_RESULTS is
 curr_time date;
 v_function varchar(100):='PACK_KFH_BATCH.KFH_KUWAIT_WHS_RESULTS';
 v_text_prefix_kwt_whs varchar2(100):='COPIED FROM KUWAIT WHOLESALE CONTEXT: ';
 
+v_update_table varchar2(50);
+v_updated_records number(10);
+
 v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
 v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
+v_table_1_update_col_text varchar2(50):='0';
+v_table_1_update_col varchar2(50):='SCENARIO_ID';
 
 v_table_2_name varchar2(50):='DEAL_RESULT';
 v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
+v_table_2_update_col_text varchar2(50):='Probability Weighted Scenario';
+v_table_2_update_col varchar2(50):='ANALYSIS_SCENARIO_CODE';
 
 v_table_3_name varchar2(50):='DIMENSION_RESULT';
 v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
@@ -2516,11 +2139,16 @@ execute immediate v_delete_sql;
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
 KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_kwt_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_kwt_whs || v_src_context_kwt_whs,v_where_clause=>null);
+v_updated_records := fast_update_from( auxiliary_tabname => v_update_table, table_to_update => v_table_1_name, update_cols => v_table_1_update_col, key_cols => 'rowid_',
+from_sql =>'select t.rowid as rowid_, ''' || v_table_1_update_col_text || ''' as ' || v_table_1_update_col || ' FROM ' || v_table_1_name || ' t');
 pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+commit;
 
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
 KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_kwt_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_kwt_whs || v_src_context_kwt_whs,v_where_clause=>null);
+v_updated_records := fast_update_from( auxiliary_tabname => v_update_table, table_to_update => v_table_2_name, update_cols => v_table_2_update_col, key_cols => 'rowid_',
+from_sql =>'select t.rowid as rowid_, ''' || v_table_2_update_col_text || ''' as ' || v_table_2_update_col || ' FROM ' || v_table_2_name || ' t');
 pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
 curr_time:=sysdate;
@@ -2540,229 +2168,20 @@ end KFH_KUWAIT_WHS_RESULTS;
 PROCEDURE KFH_MALAYSIA_CBK_WHS_RESULTS is
 curr_time date;
 v_function varchar(100):='PACK_KFH_BATCH.KFH_MALAYSIA_CBK_WHS_RESULTS';
-v_text_prefix varchar2(100):='Copied from Data context: ';
+v_text_prefix_my_cbk_whs varchar2(100):='COPIED FROM MALAYSIA CBK WHOLESALE CONTEXT: ';
+
+v_update_table varchar2(50);
+v_updated_records number(10);
 
 v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
 v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
+v_table_1_update_col_text varchar2(50):='0';
+v_table_1_update_col varchar2(50):='SCENARIO_ID';
 
 v_table_2_name varchar2(50):='DEAL_RESULT';
 v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
-
-v_table_3_name varchar2(50):='DIMENSION_RESULT';
-v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
-
-v_ws_id_my_cbk_whs number;
-v_ws_id_kwt_results number;
-
-v_pos_cbk number := 201;
-
-v_context_rd date;
-v_dest_context_id number;
-
-v_src_context_my_cbk_whs number;
-
-v_delete_sql varchar2(1000);
-
-begin
-null;
---
---EXCEPTION
---    WHEN OTHERS THEN
---	curr_time:=sysdate;
---	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
---
-end KFH_MALAYSIA_CBK_WHS_RESULTS;
-
-PROCEDURE KFH_MALAYSIA_CBK_RET_RESULTS is
-curr_time date;
-v_function varchar(100):='PACK_KFH_BATCH.KFH_MALAYSIA_CBK_RET_RESULTS';
-v_text_prefix_my_cbk_ret varchar2(100):='COPIED FROM MALAYSIA CBK RETAIL CONTEXT: ';
-
-v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
-v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
-
-v_table_2_name varchar2(50):='DEAL_RESULT';
-v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
-
-v_table_3_name varchar2(50):='DIMENSION_RESULT';
-v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
-
-v_ws_id_my_cbk_ret number;
-v_ws_id_kwt_results number;
-
-v_pos_cbk number := 201;
-
-v_context_rd date;
-v_dest_context_id number;
-
-v_src_context_my_cbk_ret number;
-
-v_delete_sql varchar2(1000);
-
-begin
-
-select to_date(value,'YYYYMMDD') into v_context_rd from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
-
-select workspace_id into v_ws_id_kwt_results from workspaces where name like 'KUWAIT_RESULTS';
-select context_id into v_dest_context_id from contexts where reporting_date = v_context_rd and workspace_id = v_ws_id_kwt_results and position = v_pos_cbk;
-
-IF v_context_rd IS NOT NULL THEN
-pack_context.contextid_open(v_dest_context_id);
-pack_log.log_write('I','F',v_function,'Step 0','Starting data copy on Kuwait Results Context ID: ' || v_dest_context_id || ' with RD: ' || v_context_rd || ', WS: ' || v_ws_id_kwt_results || ', pos: ' || v_pos_cbk || '.');
-
-select workspace_id into v_ws_id_my_cbk_ret from workspaces where name like 'MALAYSIA_CBK_RETAIL';
-select context_id into v_src_context_my_cbk_ret from contexts where workspace_id = v_ws_id_my_cbk_ret and position = v_pos_cbk and reporting_date = v_context_rd;
-
-v_delete_sql := 'delete from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_my_cbk_ret || '%''';
-execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_my_cbk_ret || '%''';
-execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_my_cbk_ret || '%''';
-execute immediate v_delete_sql;
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_my_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_my_cbk_ret || v_src_context_my_cbk_ret,v_where_clause=>null);
-pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_my_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_my_cbk_ret || v_src_context_my_cbk_ret,v_where_clause=>null);
-pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 5',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_my_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_3_column, v_identifier_text => v_text_prefix_my_cbk_ret || v_src_context_my_cbk_ret,v_where_clause=>null);
-pack_log.log_write('I','F',v_function,'Step 6',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-END IF;
-
-EXCEPTION
-    WHEN OTHERS THEN
-	curr_time:=sysdate;
-	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-
-end KFH_MALAYSIA_CBK_RET_RESULTS;
-
-PROCEDURE KFH_BAHRAIN_CBK_WHS_RESULTS is
-curr_time date;
-v_function varchar(100):='PACK_KFH_BATCH.KFH_BAHRAIN_CBK_WHS_RESULTS';
-v_text_prefix varchar2(100):='Copied from Data context: ';
-
-v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
-v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
-
-v_table_2_name varchar2(50):='DEAL_RESULT';
-v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
-
-v_table_3_name varchar2(50):='DIMENSION_RESULT';
-v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
-
-v_ws_id_bah_cbk_whs number;
-v_ws_id_kwt_results number;
-
-v_pos_cbk number := 201;
-
-v_context_rd date;
-v_dest_context_id number;
-
-v_src_context_bah_cbk_whs number;
-
-v_delete_sql varchar2(1000);
-
-begin
-null;
---
---EXCEPTION
---    WHEN OTHERS THEN
---	curr_time:=sysdate;
---	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
---
-end KFH_BAHRAIN_CBK_WHS_RESULTS;
-
-PROCEDURE KFH_BAHRAIN_CBK_RET_RESULTS is
-curr_time date;
-v_function varchar(100):='PACK_KFH_BATCH.KFH_BAHRAIN_CBK_RET_RESULTS';
-v_text_prefix_bah_cbk_ret varchar2(100):='COPIED FROM BAHRAIN CBK RETAIL CONTEXT: ';
-
-v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
-v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
-
-v_table_2_name varchar2(50):='DEAL_RESULT';
-v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
-
-v_table_3_name varchar2(50):='DIMENSION_RESULT';
-v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
-
-v_ws_id_bah_cbk_ret number;
-v_ws_id_kwt_results number;
-
-v_pos_cbk number := 201;
-
-v_context_rd date;
-v_dest_context_id number;
-
-v_src_context_bah_cbk_ret number;
-
-v_delete_sql varchar2(1000);
-
-begin
-
-select to_date(value,'YYYYMMDD') into v_context_rd from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
-
-select workspace_id into v_ws_id_kwt_results from workspaces where name like 'KUWAIT_RESULTS';
-select context_id into v_dest_context_id from contexts where reporting_date = v_context_rd and workspace_id = v_ws_id_kwt_results and position = v_pos_cbk;
-
-IF v_context_rd IS NOT NULL THEN
-pack_context.contextid_open(v_dest_context_id);
-pack_log.log_write('I','F',v_function,'Step 0','Starting data copy on Kuwait Results Context ID: ' || v_dest_context_id || ' with RD: ' || v_context_rd || ', WS: ' || v_ws_id_kwt_results || ', pos: ' || v_pos_cbk || '.');
-
-select workspace_id into v_ws_id_bah_cbk_ret from workspaces where name like 'BAHRAIN_CBK_RETAIL';
-select context_id into v_src_context_bah_cbk_ret from contexts where workspace_id = v_ws_id_bah_cbk_ret and position = v_pos_cbk and reporting_date = v_context_rd;
-
-v_delete_sql := 'delete from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_bah_cbk_ret || '%''';
-execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_bah_cbk_ret || '%''';
-execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_bah_cbk_ret || '%''';
-execute immediate v_delete_sql;
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_bah_cbk_ret || v_src_context_bah_cbk_ret,v_where_clause=>null);
-pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_bah_cbk_ret || v_src_context_bah_cbk_ret,v_where_clause=>null);
-pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-curr_time:=sysdate;
-pack_log.log_write('I','F',v_function,'Step 5',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_bah_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_3_column, v_identifier_text => v_text_prefix_bah_cbk_ret || v_src_context_bah_cbk_ret,v_where_clause=>null);
-pack_log.log_write('I','F',v_function,'Step 6',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
-
-END IF;
-
-EXCEPTION
-    WHEN OTHERS THEN
-	curr_time:=sysdate;
-	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-
-end KFH_BAHRAIN_CBK_RET_RESULTS;
-
-PROCEDURE KFH_MY_CBK_WHS_RESULTS_MID is
-curr_time date;
-v_function varchar(100):='PACK_KFH_BATCH.KFH_MY_CBK_WHS_RESULTS_MID';
-v_text_prefix_my_cbk_whs varchar2(100):='COPIED FROM MALAYSIA Pre-PWS WHOLESALE CONTEXT: ';
-
-v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
-v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
-v_table_1_where_clause varchar2(1000):='SCENARIO_ID <> 0';
-
-v_table_2_name varchar2(50):='DEAL_RESULT';
-v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
-v_table_2_where_clause varchar2(1000):='ANALYSIS_SCENARIO_CODE NOT LIKE ''Probability Weighted Scenario''';
+v_table_2_update_col_text varchar2(50):='Probability Weighted Scenario';
+v_table_2_update_col varchar2(50):='ANALYSIS_SCENARIO_CODE';
 
 v_table_3_name varchar2(50):='DIMENSION_RESULT';
 v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
@@ -2802,12 +2221,17 @@ execute immediate v_delete_sql;
 
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_my_cbk_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_my_cbk_whs || v_src_context_my_cbk_whs,v_where_clause=>v_table_1_where_clause);
+KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_my_cbk_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_my_cbk_whs || v_src_context_my_cbk_whs,v_where_clause=>null);
+v_updated_records := fast_update_from( auxiliary_tabname => v_update_table, table_to_update => v_table_1_name, update_cols => v_table_1_update_col, key_cols => 'rowid_',
+from_sql =>'select t.rowid as rowid_, ''' || v_table_1_update_col_text || ''' as ' || v_table_1_update_col || ' FROM ' || v_table_1_name || ' t');
 pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+commit;
 
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_my_cbk_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_my_cbk_whs || v_src_context_my_cbk_whs,v_where_clause=>v_table_2_where_clause);
+KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_my_cbk_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_my_cbk_whs || v_src_context_my_cbk_whs,v_where_clause=>null);
+v_updated_records := fast_update_from( auxiliary_tabname => v_update_table, table_to_update => v_table_2_name, update_cols => v_table_2_update_col, key_cols => 'rowid_',
+from_sql =>'select t.rowid as rowid_, ''' || v_table_2_update_col_text || ''' as ' || v_table_2_update_col || ' FROM ' || v_table_2_name || ' t');
 pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
 curr_time:=sysdate;
@@ -2822,20 +2246,98 @@ EXCEPTION
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
 
-end KFH_MY_CBK_WHS_RESULTS_MID;
+end KFH_MALAYSIA_CBK_WHS_RESULTS;
 
-PROCEDURE KFH_BAH_CBK_WHS_RESULTS_MID is
+PROCEDURE KFH_MALAYSIA_CBK_RET_RESULTS is
 curr_time date;
-v_function varchar(100):='PACK_KFH_BATCH.KFH_BAH_CBK_WHS_RESULTS_MID';
-v_text_prefix_bah_cbk_whs varchar2(100):='COPIED FROM BAHRAIN Pre-PWS WHOLESALE CONTEXT: ';
+v_function varchar(100):='PACK_KFH_BATCH.KFH_MALAYSIA_CBK_RET_RESULTS';
+v_text_prefix_my_cbk_ret varchar2(100):='COPIED FROM MALAYSIA CBK RETAIL CONTEXT: ';
 
 v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
 v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
-v_table_1_where_clause varchar2(1000):='SCENARIO_ID <> 0';
+v_table_1_where_clause varchar2(500):='SCENARIO_ID = 0'; 
 
 v_table_2_name varchar2(50):='DEAL_RESULT';
 v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
-v_table_2_where_clause varchar2(1000):='ANALYSIS_SCENARIO_CODE NOT LIKE ''Probability Weighted Scenario''';
+v_table_2_where_clause varchar2(500):='ANALYSIS_SCENARIO_CODE like ''Probability Weighted Scenario'''; 
+
+v_table_3_name varchar2(50):='DIMENSION_RESULT';
+v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
+
+v_ws_id_my_cbk_ret number;
+v_ws_id_kwt_results number;
+
+v_pos_cbk number := 201;
+
+v_context_rd date;
+v_dest_context_id number;
+
+v_src_context_my_cbk_ret number;
+
+v_delete_sql varchar2(1000);
+
+begin
+
+select to_date(value,'YYYYMMDD') into v_context_rd from kfh_custom_parameters where parameter = 'MONTHLY_RUN_DATE';
+
+select workspace_id into v_ws_id_kwt_results from workspaces where name like 'KUWAIT_RESULTS';
+select context_id into v_dest_context_id from contexts where reporting_date = v_context_rd and workspace_id = v_ws_id_kwt_results and position = v_pos_cbk;
+
+IF v_context_rd IS NOT NULL THEN
+pack_context.contextid_open(v_dest_context_id);
+pack_log.log_write('I','F',v_function,'Step 0','Starting data copy on Kuwait Results Context ID: ' || v_dest_context_id || ' with RD: ' || v_context_rd || ', WS: ' || v_ws_id_kwt_results || ', pos: ' || v_pos_cbk || '.');
+
+select workspace_id into v_ws_id_my_cbk_ret from workspaces where name like 'MALAYSIA_CBK_RETAIL';
+select context_id into v_src_context_my_cbk_ret from contexts where workspace_id = v_ws_id_my_cbk_ret and position = v_pos_cbk and reporting_date = v_context_rd;
+
+v_delete_sql := 'delete from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_my_cbk_ret || '%''';
+execute immediate v_delete_sql;
+v_delete_sql := 'delete from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_my_cbk_ret || '%''';
+execute immediate v_delete_sql;
+v_delete_sql := 'delete from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_my_cbk_ret || '%''';
+execute immediate v_delete_sql;
+
+curr_time:=sysdate;
+pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
+KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_my_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_my_cbk_ret || v_src_context_my_cbk_ret,v_where_clause=>v_table_1_where_clause);
+pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+
+curr_time:=sysdate;
+pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
+KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_my_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_my_cbk_ret || v_src_context_my_cbk_ret,v_where_clause=>v_table_2_where_clause);
+pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+
+curr_time:=sysdate;
+pack_log.log_write('I','F',v_function,'Step 5',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
+KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_my_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_3_column, v_identifier_text => v_text_prefix_my_cbk_ret || v_src_context_my_cbk_ret,v_where_clause=>null);
+pack_log.log_write('I','F',v_function,'Step 6',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+
+END IF;
+
+EXCEPTION
+    WHEN OTHERS THEN
+	curr_time:=sysdate;
+	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
+
+end KFH_MALAYSIA_CBK_RET_RESULTS;
+
+PROCEDURE KFH_BAHRAIN_CBK_WHS_RESULTS is
+curr_time date;
+v_function varchar(100):='PACK_KFH_BATCH.KFH_BAHRAIN_CBK_WHS_RESULTS';
+v_text_prefix_bah_cbk_whs varchar2(100):='COPIED FROM BAHRAIN CBK WHOLESALE CONTEXT: ';
+
+v_update_table varchar2(50);
+v_updated_records number(10);
+
+v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
+v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
+v_table_1_update_col_text varchar2(50):='0';
+v_table_1_update_col varchar2(50):='SCENARIO_ID';
+
+v_table_2_name varchar2(50):='DEAL_RESULT';
+v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
+v_table_2_update_col_text varchar2(50):='Probability Weighted Scenario';
+v_table_2_update_col varchar2(50):='ANALYSIS_SCENARIO_CODE';
 
 v_table_3_name varchar2(50):='DIMENSION_RESULT';
 v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
@@ -2875,12 +2377,17 @@ execute immediate v_delete_sql;
 
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_cbk_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_bah_cbk_whs || v_src_context_bah_cbk_whs,v_where_clause=>v_table_1_where_clause);
+KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_cbk_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_bah_cbk_whs || v_src_context_bah_cbk_whs,v_where_clause=>null);
+v_updated_records := fast_update_from( auxiliary_tabname => v_update_table, table_to_update => v_table_1_name, update_cols => v_table_1_update_col, key_cols => 'rowid_',
+from_sql =>'select t.rowid as rowid_, ''' || v_table_1_update_col_text || ''' as ' || v_table_1_update_col || ' FROM ' || v_table_1_name || ' t');
 pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+commit;
 
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_cbk_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_bah_cbk_whs || v_src_context_bah_cbk_whs,v_where_clause=>v_table_2_where_clause);
+KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_cbk_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_bah_cbk_whs || v_src_context_bah_cbk_whs,v_where_clause=>null);
+v_updated_records := fast_update_from( auxiliary_tabname => v_update_table, table_to_update => v_table_2_name, update_cols => v_table_2_update_col, key_cols => 'rowid_',
+from_sql =>'select t.rowid as rowid_, ''' || v_table_2_update_col_text || ''' as ' || v_table_2_update_col || ' FROM ' || v_table_2_name || ' t');
 pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
 curr_time:=sysdate;
@@ -2895,26 +2402,25 @@ EXCEPTION
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
 
-end KFH_BAH_CBK_WHS_RESULTS_MID;
+end KFH_BAHRAIN_CBK_WHS_RESULTS;
 
-
-PROCEDURE KFH_KWT_CBK_WHS_RESULTS_MID is
+PROCEDURE KFH_BAHRAIN_CBK_RET_RESULTS is
 curr_time date;
-v_function varchar(100):='PACK_KFH_BATCH.KFH_KWT_CBK_WHS_RESULTS_MID';
-v_text_prefix_kwt_whs varchar2(100):='COPIED FROM KUWAIT Pre-PWS WHOLESALE CONTEXT: ';
+v_function varchar(100):='PACK_KFH_BATCH.KFH_BAHRAIN_CBK_RET_RESULTS';
+v_text_prefix_bah_cbk_ret varchar2(100):='COPIED FROM BAHRAIN CBK RETAIL CONTEXT: ';
 
 v_table_1_name varchar2(50):='T_ALM_ANALYTICS';
 v_table_1_column varchar2(50):='GENERIC_FIELD9'; -- entity_attribute_9, custom_dimension_9, customer_field9, generic_field9, generic_number9, sub_attribute_9
-v_table_1_where_clause varchar2(1000):='SCENARIO_ID <> 0';
+v_table_1_where_clause varchar2(500):='SCENARIO_ID = 0'; 
 
 v_table_2_name varchar2(50):='DEAL_RESULT';
 v_table_2_column varchar2(50):='SIMULATION_DEF_NAME'; -- SIMULATION_DEF_NAME
-v_table_2_where_clause varchar2(1000):='ANALYSIS_SCENARIO_CODE NOT LIKE ''Probability Weighted Scenario''';
+v_table_2_where_clause varchar2(500):='ANALYSIS_SCENARIO_CODE like ''Probability Weighted Scenario'''; 
 
 v_table_3_name varchar2(50):='DIMENSION_RESULT';
 v_table_3_column varchar2(50):='SUB_ATTRIBUTE_9'; -- instrument_attribute_9, entity_attribute_9, custom_dimension_9, sub_attribute_9 from dimension_result;
 
-v_ws_id_kwt_whs number;
+v_ws_id_bah_cbk_ret number;
 v_ws_id_kwt_results number;
 
 v_pos_cbk number := 201;
@@ -2922,7 +2428,7 @@ v_pos_cbk number := 201;
 v_context_rd date;
 v_dest_context_id number;
 
-v_src_context_kwt_whs number;
+v_src_context_bah_cbk_ret number;
 
 v_delete_sql varchar2(1000);
 
@@ -2937,29 +2443,29 @@ IF v_context_rd IS NOT NULL THEN
 pack_context.contextid_open(v_dest_context_id);
 pack_log.log_write('I','F',v_function,'Step 0','Starting data copy on Kuwait Results Context ID: ' || v_dest_context_id || ' with RD: ' || v_context_rd || ', WS: ' || v_ws_id_kwt_results || ', pos: ' || v_pos_cbk || '.');
 
-select workspace_id into v_ws_id_kwt_whs from workspaces where name like 'KUWAIT';
-select context_id into v_src_context_kwt_whs from contexts where workspace_id = v_ws_id_kwt_whs and position = v_pos_cbk and reporting_date = v_context_rd;
+select workspace_id into v_ws_id_bah_cbk_ret from workspaces where name like 'BAHRAIN_CBK_RETAIL';
+select context_id into v_src_context_bah_cbk_ret from contexts where workspace_id = v_ws_id_bah_cbk_ret and position = v_pos_cbk and reporting_date = v_context_rd;
 
-v_delete_sql := 'delete from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_kwt_whs || '%''';
+v_delete_sql := 'delete from ' || v_table_1_name || ' where ' || v_table_1_column || ' like ''' || v_text_prefix_bah_cbk_ret || '%''';
 execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_kwt_whs || '%''';
+v_delete_sql := 'delete from ' || v_table_2_name || ' where ' || v_table_2_column || ' like ''' || v_text_prefix_bah_cbk_ret || '%''';
 execute immediate v_delete_sql;
-v_delete_sql := 'delete from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_kwt_whs || '%''';
+v_delete_sql := 'delete from ' || v_table_3_name || ' where ' || v_table_3_column || ' like ''' || v_text_prefix_bah_cbk_ret || '%''';
 execute immediate v_delete_sql;
 
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 1',v_table_1_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_kwt_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_kwt_whs || v_src_context_kwt_whs,v_where_clause=>v_table_1_where_clause);
+KFH_TABLE_DATA_COPY(v_table =>v_table_1_name, v_src_context =>v_src_context_bah_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_1_column, v_identifier_text => v_text_prefix_bah_cbk_ret || v_src_context_bah_cbk_ret,v_where_clause=>v_table_1_where_clause);
 pack_log.log_write('I','F',v_function,'Step 2',v_table_1_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 3',v_table_2_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_kwt_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_kwt_whs || v_src_context_kwt_whs,v_where_clause=>v_table_2_where_clause);
+KFH_TABLE_DATA_COPY(v_table =>v_table_2_name, v_src_context =>v_src_context_bah_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_2_column, v_identifier_text => v_text_prefix_bah_cbk_ret || v_src_context_bah_cbk_ret,v_where_clause=>v_table_2_where_clause);
 pack_log.log_write('I','F',v_function,'Step 4',v_table_2_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 5',v_table_3_name || ' data copy started on Context: ' || v_dest_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_kwt_whs, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_3_column, v_identifier_text => v_text_prefix_kwt_whs || v_src_context_kwt_whs,v_where_clause=>null);
+KFH_TABLE_DATA_COPY(v_table =>v_table_3_name, v_src_context =>v_src_context_bah_cbk_ret, v_dest_context =>v_dest_context_id, v_identifier_column =>v_table_3_column, v_identifier_text => v_text_prefix_bah_cbk_ret || v_src_context_bah_cbk_ret,v_where_clause=>null);
 pack_log.log_write('I','F',v_function,'Step 6',v_table_3_name || ' data copy completed on Context: ' || v_dest_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
 END IF;
@@ -2969,6 +2475,6 @@ EXCEPTION
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
 
-end KFH_KWT_CBK_WHS_RESULTS_MID;
+end KFH_BAHRAIN_CBK_RET_RESULTS;
 
 END PACK_KFH_BATCH;
