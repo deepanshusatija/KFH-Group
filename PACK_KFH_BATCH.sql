@@ -1,5 +1,5 @@
 create or replace 
-PACKAGE PACK_KFH_BATCH AUTHID CURRENT_USER
+PACKAGE           "PACK_KFH_BATCH" AUTHID CURRENT_USER
 AS
   FUNCTION return_partition_key(
       VV_TARGET_RD    DATE,
@@ -21,7 +21,9 @@ AS
   PROCEDURE post_etl_process(
       VV_TARGET_RD DATE,
       VV_RESULT OUT VARCHAR2);
-	
+  
+  PROCEDURE MAT_ADJUST_CONTEXT_CREATE(P_RD         VARCHAR2);
+  
   procedure KFH_UPDATE_MONTH_END_DATE;
   
 	PROCEDURE KFH_CREATE_ALL_CONTEXTS;
@@ -81,19 +83,19 @@ AS
   PROCEDURE KFH_BAHRAIN_CBK_WHS_RESULTS;
   
   PROCEDURE KFH_BAHRAIN_CBK_RET_RESULTS;
-    
+  
   PROCEDURE SAE_COPY_RESULTS (src_context_id NUMBER DEFAULT NULL, dest_context_id NUMBER, table_name NVARCHAR2, filter_condition CLOB);
   
   procedure SAE_BAHRAIN_RESULTS_COPY;
   
   procedure SAE_MALAYSIA_RESULTS_COPY;
-    
+  
 END PACK_KFH_BATCH;
 
 /
 
 create or replace 
-PACKAGE BODY PACK_KFH_BATCH
+PACKAGE BODY           "PACK_KFH_BATCH" 
 AS
 FUNCTION return_context_id(
     VV_TARGET_RD    DATE,
@@ -114,6 +116,7 @@ EXCEPTION
 WHEN OTHERS THEN
   RETURN 'Error !!! No data returned for the specified combination of reporting date, Workspace and Position';
 END;
+
 FUNCTION return_partition_key(
     VV_TARGET_RD    DATE,
     VV_TABLE_NAME   VARCHAR2,
@@ -140,6 +143,7 @@ WHEN OTHERS THEN
   pack_log.log_write(v_function => 'PACK_KFH_BATCH.return_partition_key', v_message => 'Error while fetching the Partition key', v_step => 0, v_log_type => 'E', v_parameters => SQLCODE || ' :: ' || SQLERRM);
   raise;
 END;
+
 PROCEDURE CONTEXT_CREATE_KFH(
 P_RD varchar2, -- yyyymmdd e.g.20160331
 P_ADJUSTMENT VARCHAR2 DEFAULT 'N') ---- IF 'N' THEN MONTHLY.
@@ -154,6 +158,7 @@ V_POSITION_FROM NUMBER;
 V_WORKSPACE_GRP NUMBER :=11;
 V_WORKSPACE_BAH NUMBER :=10;
 V_WORKSPACE_MA  NUMBER :=12;
+V_COPYSET_ID NUMBER := 141;
 --Copy to variables
 V_POSITION_TO NUMBER;
 V_WORKSPACE_TO NUMBER;
@@ -193,25 +198,25 @@ THEN
 v_Step:=201;
 pack_log.log_write(v_function => 'PACK_KFH_BATCH.CREATE_CONTEXT_KFH', v_message => 'invoke group context creation for reporting date VV_TARGET_RD', v_step => v_step, v_log_type => 'I', v_parameters => '');
 
-PACK_CONTEXT.CONTEXT_CREATE( V_REPORTING_DATE => TO_DATE(P_RD,'YYYYMMDD'), V_WORKSPACE_ID => V_WORKSPACE_GRP, V_CREATE_FROM_RD => TO_DATE(V_RD_FROM_GRP,'YYYYMMDD'), V_CREATE_FROM_WS => V_WORKSPACE_GRP,V_INCLUDE_IMPORT => 'N',V_DESCRIPTION => 'KUWAIT_MONTHEND_CONTEXT',V_POSITION => V_POSITION_TO, V_CREATE_FROM_POSITION => V_POSITION_FROM, V_COLLECT_STAT_ON_NEW_CONTEXT => 'Y', V_TABLESPACE_DATA => 'APPDATA', V_TABLESPACE_INDEX => 'APPINDEXES', V_TABLE_TYPES_TO_GATHER => 'DATA,PARAM,CALC,TEMP,WORKSPACE', V_DEFER_CREATION => 'Y',V_PARALLEL_STATS => 1,V_PARALLEL =>1);
+PACK_CONTEXT.CONTEXT_CREATE( V_REPORTING_DATE => TO_DATE(P_RD,'YYYYMMDD'), V_WORKSPACE_ID => V_WORKSPACE_GRP, V_CREATE_FROM_RD => TO_DATE(V_RD_FROM_GRP,'YYYYMMDD'), V_CREATE_FROM_WS => V_WORKSPACE_GRP,V_INCLUDE_IMPORT => 'N',V_DESCRIPTION => 'KUWAIT_MONTHEND_CONTEXT',V_POSITION => V_POSITION_TO, V_CREATE_FROM_POSITION => V_POSITION_FROM, V_COLLECT_STAT_ON_NEW_CONTEXT => 'Y', V_TABLESPACE_DATA => 'APPDATA', V_TABLESPACE_INDEX => 'APPINDEXES', V_TABLE_TYPES_TO_GATHER => 'DATA,PARAM,CALC,TEMP,WORKSPACE', V_DEFER_CREATION => 'Y',V_PARALLEL_STATS => 1,V_PARALLEL =>1,v_copy_set => V_COPYSET_ID);
 END IF;
 
 IF P_RD is not null and P_ADJUSTMENT = 'N' and V_CHECK_CONTEXT_BAH = 0 
 THEN
 v_step:=202;
 pack_log.log_write(v_function => 'PACK_KFH_BATCH.CREATE_CONTEXT_KFH', v_message => 'invoke bahrain context creation for reporting date VV_TARGET_RD', v_step => v_step, v_log_type => 'I', v_parameters => '');
-PACK_CONTEXT.CONTEXT_CREATE( V_REPORTING_DATE => TO_DATE(P_RD,'YYYYMMDD'), V_WORKSPACE_ID => V_WORKSPACE_BAH, V_CREATE_FROM_RD => TO_DATE(V_RD_FROM_GRP,'YYYYMMDD'), V_CREATE_FROM_WS => V_WORKSPACE_BAH,V_INCLUDE_IMPORT => 'N',V_DESCRIPTION => 'BAHRAIN_MONTHEND_CONTEXT',V_POSITION => V_POSITION_TO, V_CREATE_FROM_POSITION => V_POSITION_FROM, V_COLLECT_STAT_ON_NEW_CONTEXT => 'Y', V_TABLESPACE_DATA => 'APPDATA', V_TABLESPACE_INDEX => 'APPINDEXES',V_TABLE_TYPES_TO_GATHER => 'DATA,PARAM,CALC,TEMP,WORKSPACE',V_DEFER_CREATION => 'Y',V_PARALLEL_STATS =>1,V_PARALLEL =>1);
+PACK_CONTEXT.CONTEXT_CREATE( V_REPORTING_DATE => TO_DATE(P_RD,'YYYYMMDD'), V_WORKSPACE_ID => V_WORKSPACE_BAH, V_CREATE_FROM_RD => TO_DATE(V_RD_FROM_GRP,'YYYYMMDD'), V_CREATE_FROM_WS => V_WORKSPACE_BAH,V_INCLUDE_IMPORT => 'N',V_DESCRIPTION => 'BAHRAIN_MONTHEND_CONTEXT',V_POSITION => V_POSITION_TO, V_CREATE_FROM_POSITION => V_POSITION_FROM, V_COLLECT_STAT_ON_NEW_CONTEXT => 'Y', V_TABLESPACE_DATA => 'APPDATA', V_TABLESPACE_INDEX => 'APPINDEXES',V_TABLE_TYPES_TO_GATHER => 'DATA,PARAM,CALC,TEMP,WORKSPACE',V_DEFER_CREATION => 'Y',V_PARALLEL_STATS =>1,V_PARALLEL =>1,v_copy_set => V_COPYSET_ID);
 END IF;
 
 IF P_RD is not null and P_ADJUSTMENT = 'N' and V_CHECK_CONTEXT_MA = 0 
 THEN
 v_step:=203;
 pack_log.log_write(v_function => 'PACK_KFH_BATCH.CREATE_CONTEXT_KFH', v_message => 'invoke malaysia context creation for reporting date VV_TARGET_RD', v_step => v_step, v_log_type => 'I', v_parameters => '');
-PACK_CONTEXT.CONTEXT_CREATE( V_REPORTING_DATE => TO_DATE(P_RD,'YYYYMMDD'), V_WORKSPACE_ID => V_WORKSPACE_MA, V_CREATE_FROM_RD => TO_DATE(V_RD_FROM_GRP,'YYYYMMDD'), V_CREATE_FROM_WS => V_WORKSPACE_MA,V_INCLUDE_IMPORT => 'N',V_DESCRIPTION => 'MALAYSIA_MONTHEND_CONTEXT',V_POSITION => V_POSITION_TO, V_CREATE_FROM_POSITION => V_POSITION_FROM, V_COLLECT_STAT_ON_NEW_CONTEXT => 'Y',V_TABLESPACE_DATA => 'APPDATA', V_TABLESPACE_INDEX => 'APPINDEXES', V_TABLE_TYPES_TO_GATHER => 'DATA,PARAM,CALC,TEMP,WORKSPACE',V_DEFER_CREATION => 'Y',V_PARALLEL_STATS =>1,V_PARALLEL =>1);
+PACK_CONTEXT.CONTEXT_CREATE( V_REPORTING_DATE => TO_DATE(P_RD,'YYYYMMDD'), V_WORKSPACE_ID => V_WORKSPACE_MA, V_CREATE_FROM_RD => TO_DATE(V_RD_FROM_GRP,'YYYYMMDD'), V_CREATE_FROM_WS => V_WORKSPACE_MA,V_INCLUDE_IMPORT => 'N',V_DESCRIPTION => 'MALAYSIA_MONTHEND_CONTEXT',V_POSITION => V_POSITION_TO, V_CREATE_FROM_POSITION => V_POSITION_FROM, V_COLLECT_STAT_ON_NEW_CONTEXT => 'Y',V_TABLESPACE_DATA => 'APPDATA', V_TABLESPACE_INDEX => 'APPINDEXES', V_TABLE_TYPES_TO_GATHER => 'DATA,PARAM,CALC,TEMP,WORKSPACE',V_DEFER_CREATION => 'Y',V_PARALLEL_STATS =>1,V_PARALLEL =>1,v_copy_set => V_COPYSET_ID);
+END IF;
 pack_context.contextid_create(v_context_id =>null,v_parallel_stats=>1,v_parallel=>1);
 v_step:=204;
 pack_log.log_write(v_function => 'PACK_KFH_BATCH.CREATE_CONTEXT_KFH', v_message => 'Successfully created context(s) for reporting date VV_TARGET_RD', v_step => v_step, v_log_type => 'I', v_parameters => '');
-END IF;
 COMMIT;
 
 EXCEPTION
@@ -256,6 +261,55 @@ WHEN OTHERS THEN
   pack_log.log_write(v_function => 'PACK_KFH_BATCH.POST_ETL_PROCESS', v_message => 'Trigger post ETL process ' || TO_CHAR(VV_TARGET_RD, 'DD-Mon-RRRR'), v_step => v_step, v_log_type => 'I', v_parameters => '');
   VV_RESULT := 'FAILED';
   RETURN ; --XXXX12092018 -- call not returning to the calling environment
+END;
+
+PROCEDURE MAT_ADJUST_CONTEXT_CREATE(P_RD varchar2)
+
+is
+V_CHECK_CONTEXT_CREATED number:=0;
+V_CHECK_SOURCE_CONTEXT_CREATED number:=0;
+V_POSITION_FROM NUMBER:= 101;
+V_POSITION_TO NUMBER:= 201;
+V_WORKSPACE_GRP NUMBER :=11;
+V_STEP NUMBER :=200;
+BEGIN
+PACK_LOG.LOG_BEGIN('PACK_KFH_BATCH.ADJUSTED_CONTEXT_CREATE');
+--- Check if the MATURITY ADJUSTEMENTS context already exists ----
+SELECT COUNT(1)
+INTO V_CHECK_CONTEXT_CREATED
+FROM CONTEXTS
+WHERE REPORTING_DATE = TO_DATE(P_RD,'YYYYMMDD')
+AND POSITION = V_POSITION_TO
+and WORKSPACE_ID = V_WORKSPACE_GRP;
+
+--- Check if the SOURCE context already exists ----
+SELECT COUNT(1)
+INTO V_CHECK_SOURCE_CONTEXT_CREATED
+FROM CONTEXTS
+WHERE REPORTING_DATE = TO_DATE(P_RD,'YYYYMMDD')
+AND POSITION = V_POSITION_FROM
+and WORKSPACE_ID = V_WORKSPACE_GRP
+AND TO_CREATE='N';
+
+----if the source context is not created, raise exception
+IF V_CHECK_SOURCE_CONTEXT_CREATED = 0 THEN
+  raise_application_error(-20001, 'Source context (RD: '||TO_DATE(P_RD,'YYYYMMDD')||', WS: '||V_WORKSPACE_GRP||', POS: '||V_POSITION_FROM||') is not yet created');
+END IF;
+
+IF P_RD is not null and V_CHECK_CONTEXT_CREATED = 0 
+THEN
+--- To Create ADJUSTED MATURITY Context ---
+v_Step:=201;
+pack_log.log_write(v_function => 'PACK_KFH_BATCH.ADJUSTED_CONTEXT_CREATE', v_message => 'invoke group adjusted maturities context creation for reporting date '|| TO_DATE(P_RD,'YYYYMMDD'), v_step => v_step, v_log_type => 'I', v_parameters => '');
+
+PACK_CONTEXT.CONTEXT_CREATE( V_REPORTING_DATE => TO_DATE(P_RD,'YYYYMMDD'), V_WORKSPACE_ID => V_WORKSPACE_GRP, V_CREATE_FROM_RD => TO_DATE(P_RD,'YYYYMMDD'), V_CREATE_FROM_WS => V_WORKSPACE_GRP,V_INCLUDE_IMPORT => 'Y',V_DESCRIPTION => 'KUWAIT_ADJUSTED_MATURITIES_MONTHEND_CONTEXT',V_POSITION => V_POSITION_TO, V_CREATE_FROM_POSITION => V_POSITION_FROM, V_COLLECT_STAT_ON_NEW_CONTEXT => 'Y', V_TABLESPACE_DATA => 'APPDATA', V_TABLESPACE_INDEX => 'APPINDEXES', V_TABLE_TYPES_TO_GATHER => 'DATA,PARAM,CALC,TEMP,WORKSPACE');
+END IF;
+
+
+EXCEPTION
+WHEN OTHERS THEN
+pack_log.log_write(v_function => 'PACK_KFH_BATCH.ADJUSTED_CONTEXT_CREATE', v_message => 'Context creation failed for VV_TARGET_RD', v_step => v_step, v_log_type => 'E', v_parameters => '');
+PACK_LOG.LOG_END('ADJUSTED_CONTEXT_CREATE');
 END;
 
 procedure KFH_UPDATE_MONTH_END_DATE is
@@ -491,7 +545,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the context creation script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_CREATE_ALL_CONTEXTS;
 
 PROCEDURE KFH_CHECK_ERROR_ALL_CONTEXTS is
@@ -661,7 +715,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_CHECK_ERROR_ALL_CONTEXTS;
 
 procedure KFH_TABLE_DATA_COPY(v_table IN VARCHAR2, v_src_context IN NUMBER, v_dest_context IN NUMBER, v_identifier_column IN VARCHAR2 default NULL,v_identifier_text IN VARCHAR2 default NULL,v_where_clause IN VARCHAR2 default NULL)
@@ -674,29 +728,30 @@ v_pk_rd_ws varchar2(20);
 v_sql varchar2(1000);
 v_delete_sql varchar2(1000);
 v_temp_table varchar2(50);
-v_temp_count NUMBER(10);
+v_temp_count number(10);
 v_temp_tbl_count number(10);
 begin
   V_STEP := 'Step 1';
   pack_log.log_write('I','F',v_function,v_step, v_function ||' procedure starts');
 
+  if (v_table not like 'T_CDR') then     -- For T_CDR, only freshly loaded data is needed (in case of rerun), so skipping existing data saving code
   v_temp_table := upper(v_table) || '_' || v_dest_context || '_TMP_TBL';
   pack_context.contextid_open(v_dest_context);
-  v_sql := 'SELECT count(1) FROM all_tables WHERE upper(table_name) LIKE ''' || v_temp_table || '''';
-  EXECUTE IMMEDIATE v_sql INTO v_temp_tbl_count ;
-  IF(v_temp_tbl_count > 0) THEN
-  EXECUTE IMMEDIATE 'DROP TABLE '|| v_temp_table;
-  END IF;
-  
+  v_sql := 'select count(1) from all_tables where upper(table_name) like ''' || v_temp_table || '''';  
+  execute immediate v_sql into v_temp_tbl_count;
+  if (v_temp_tbl_count > 0) then
+  execute immediate 'DROP TABLE ' || v_temp_table;
+  end if;
+    
   v_sql := 'create table ' || v_temp_table || ' as select * from ' || v_table;
   execute immediate v_sql;
   v_sql := 'select count(1) from ' || v_temp_table ;
   execute immediate v_sql into v_temp_count;
 
-
   v_step := 'Step 2';
   pack_log.log_write('I', 'F',v_function, v_step, 'Temp table: '|| v_temp_table || ' created with ' || v_temp_count || ' records, to store existing data of destination context: '|| v_dest_context );
-
+  end if;
+  
   pack_context.context_copy_table(v_table_name => v_table, v_dest_context_id =>v_dest_context, v_src_context_id=>v_src_context); -- it truncates destination and puts source data
   
   V_STEP := 'Step 3';
@@ -721,6 +776,7 @@ begin
   V_STEP := 'Step 5';
   pack_log.log_write('I', 'F',v_function, v_step, v_table || '.' || v_identifier_column || ' updated for ' || nvl(v_updated_records,0) || ' rows copied from source context' );
   
+  if (v_table not like 'T_CDR') then     -- For T_CDR, only freshly loaded data is needed (in case of rerun), so skipping existing data saving code
   v_sql := 'insert into ' || v_table || ' select * from ' || v_temp_table || '';
   execute immediate v_sql;
   
@@ -732,16 +788,15 @@ begin
   
   V_STEP := 'Step 7';
   pack_log.log_write('I', 'F',v_function, v_step, 'Temp table: ' || v_temp_table || ' dropped');
-    
-
+  end if;
+  
   V_STEP := 'Step End';
   pack_log.log_write('I','F',v_function,v_step,v_function || ' procedure ends');
   
-  
 EXCEPTION
     WHEN OTHERS THEN
-	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || sqlcode || ' :: ' || sqlerrm ||' at ' || to_char(SYSDATE,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || sqlcode || ' :: ' || sqlerrm ||' at ' || to_char(sysdate,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_TABLE_DATA_COPY;
 
 PROCEDURE KFH_TCDR_FOR_SUBS_CBK is
@@ -799,7 +854,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_TCDR_FOR_SUBS_CBK;
 
 PROCEDURE KFH_TCDR_FOR_LOCAL is
@@ -848,7 +903,7 @@ pack_log.log_write('I','F',v_function,'Step 2',v_table_name || ' data copy compl
 
 curr_time:=sysdate;
 select workspace_id into v_ws_id_my_results from workspaces where name like 'MALAYSIA_RESULTS';
-select context_id into v_context_id from contexts where workspace_id = v_ws_id_my_results and position = v_pos_kwt and reporting_date = v_context_rd;
+select context_id into v_context_id from contexts where workspace_id = v_ws_id_my_results and position = v_pos_my_bah and reporting_date = v_context_rd;
 pack_log.log_write('I','F',v_function,'Step 3','Starting ' || v_table_name || ' data copy on Context: ' || v_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
 KFH_TABLE_DATA_COPY(v_table =>v_table_name, v_src_context =>v_data_context_my_bh, v_dest_context =>v_context_id, v_identifier_column =>v_identity_column,v_identifier_text =>v_text_prefix||v_data_context_my_bh,v_where_clause=>null);
 pack_batch.recheck_table(v_table_name);
@@ -856,7 +911,7 @@ pack_log.log_write('I','F',v_function,'Step 4',v_table_name || ' data copy compl
 
 curr_time:=sysdate;
 select workspace_id into v_ws_id_bah_results from workspaces where name like 'BAHRAIN_RESULTS';
-select context_id into v_context_id from contexts where workspace_id = v_ws_id_bah_results and position = v_pos_kwt and reporting_date = v_context_rd;
+select context_id into v_context_id from contexts where workspace_id = v_ws_id_bah_results and position = v_pos_my_bah and reporting_date = v_context_rd;
 pack_log.log_write('I','F',v_function,'Step 5','Starting ' || v_table_name || ' data copy on Context: ' || v_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
 KFH_TABLE_DATA_COPY(v_table =>v_table_name, v_src_context =>v_data_context_my_bh, v_dest_context =>v_context_id, v_identifier_column =>v_identity_column,v_identifier_text =>v_text_prefix||v_data_context_my_bh,v_where_clause=>null);
 pack_batch.recheck_table(v_table_name);
@@ -868,7 +923,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_TCDR_FOR_LOCAL;
 
 PROCEDURE KFH_TCDR_FOR_KWT_CBK is
@@ -917,7 +972,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_TCDR_FOR_KWT_CBK;
 
 PROCEDURE KFH_CHECK_ERROR_CBK_DATA is
@@ -946,13 +1001,16 @@ pack_log.log_write('I','F',v_function,'Step 1','Starting Check Error on DATA tab
 PACK_BATCH.GLOBAL_RECHECK_IMPORT(v_import_set=>'RCO Checks D');
 pack_log.log_write('I','F',v_function,'Step 2','Check Error completed on DATA tables on Context: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
+PACK_KFH_BATCH.KFH_TCDR_FOR_KWT_CBK();
+PACK_KFH_BATCH.KFH_TCDR_FOR_SUBS_CBK();
+
 END IF;
 
 EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_CHECK_ERROR_CBK_DATA;
 
 PROCEDURE KFH_CHECK_ERROR_LOCAL_DATA is
@@ -982,31 +1040,30 @@ pack_log.log_write('I','F',v_function,'Step 1','Starting Check Error on DATA tab
 PACK_BATCH.GLOBAL_RECHECK_IMPORT(v_import_set=>'RCO Checks D');
 pack_log.log_write('I','F',v_function,'Step 2','Check Error completed on DATA tables on Context: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
+PACK_KFH_BATCH.KFH_TCDR_FOR_LOCAL();
+
 END IF;
 
 EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_CHECK_ERROR_LOCAL_DATA;
   
 procedure KFH_DM_RCO(v_context_id in number, v_mapping_ids in varchar2 default null, v_alm_process_name in varchar2 default null)
 is
-curr_time DATE;
+curr_time date;
 v_function varchar(100):='PACK_KFH_BATCH.KFH_DM_RCO';
-v_user_id NUMBER;
-v_grid_url VARCHAR2(1000); --:= 'FZVTMODAP05:2199';
+v_user_id number;
+v_grid_url varchar2(1000); --:= 'FZVTMODAP05:2199';
 
 begin
 
 pack_log.log_write('I','F',v_function,'Step I','Parameters: Context ID: ' || v_context_id || ', Mapping IDs: ' || v_mapping_ids || ' and RCO: ' || v_alm_process_name || '.' );
 
---select user_id into v_user_id from cd_users where user_name like 'SAU_USER1';
 select user_id into v_user_id from cd_users where user_name in (SELECT VALUE FROM kfh_custom_parameters WHERE parameter LIKE 'SAU_PROCESS_RUNNING_USER');
 SELECT parameter_value into v_grid_url FROM cd_administration_parameters WHERE parameter_name LIKE 'GRID_CLUSTER_URL';
-
-v_grid_url := 'FZVTMODAP05:2199';
 
 IF v_context_id IS NOT NULL THEN
 pack_log.log_write('I','F',v_function,'Step 0','Starting Deal Mapping on Context ID: ' || v_context_id || '.');
@@ -1015,9 +1072,9 @@ curr_time:=sysdate;
 delete from tokens;
 commit;
 
+pack_log.log_write('I','F',v_function,'Step 1','Context ID: ' || v_context_id || ' and User ID: '|| v_user_id);
 PACK_INSTAll.SET_user_id(v_user_id);
 pack_context.contextid_open(v_context_id);
-pack_log.log_write('I','F',v_function,'Step 1','Context ID: ' || v_context_id || ' and User ID: '|| v_user_id);
 
 if v_mapping_ids is not null then
 pack_fts.p_procLaunchRCO(v_process_setting_name=>'mappingRule',v_wait=>'Y',
@@ -1035,7 +1092,7 @@ pack_log.log_write('I','F',v_function,'Step 2.1','Post Deal Mapping (if executed
 if v_alm_process_name is not null then
 curr_time:=sysdate;
 pack_log.log_write('I','F',v_function,'Step 3','Starting ALM run on Context: ' || v_context_id || ' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss'));
-pack_fts.p_procLaunchRCo(v_PROCESS_SETTING_NAME =>v_alm_process_name, v_wait => 'Y', v_mainClass => 'com.moodys.alm.test.ExecutableTest -type runAnalysis -runOnGrid true -wfCode RAY -ignoreDBConfig false -gridURL ' || v_grid_url || ' -exitCodeMode true -context ' || pack_install.get_context_id || ' -test "' || v_alm_process_name || '"', v_jarName => 'test-6.2.0-SNAPSHOT.jar', v_execDir => 'RCO/ray-integration', v_sparkConfigScope=>'RCO', wait_completion => 'Y');
+pack_fts.p_procLaunchRCo(v_PROCESS_SETTING_NAME =>v_alm_process_name, v_wait => 'Y', v_mainClass => 'com.moodys.alm.test.ExecutableTest -type runAnalysis -runOnGrid true -ignoreDBConfig false -gridURL ' || v_grid_url || ' -exitCodeMode true -context ' || pack_install.get_context_id || ' -test "' || v_alm_process_name || '"', v_jarName => 'test-6.2.0-SNAPSHOT.jar', v_execDir => 'RCO/ray-integration', v_sparkConfigScope=>'RCO', wait_completion => 'Y');
 dbms_lock.sleep(10);
 pack_log.log_write('I','F',v_function,'Step 4','ALM run completed on Context: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 end if;
@@ -1446,10 +1503,11 @@ res:= -99;
 return res;
 end if;
 
+/* 20210519 - modification of WF for reporting and curing - starts*/
 V_STEP := 'Step 4';
 pack_log.log_write('I','F',v_function,v_step, 'Starting first RCO for Context ID: ' || v_context_id);
-curr_time:= sysdate;
-PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'KWT_1_KFH_IFRS9_FULL (WholeSale Pre-PWS)');
+curr_time:= SYSDATE;
+PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'KWT_0_KFH_IFRS9_FULL (WholeSale Unconditional)');
 V_STEP := 'Step 5';
 pack_log.log_write('I','F',v_function,v_step, 'First RCO completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
@@ -1460,7 +1518,7 @@ V_STEP := 'Step -99';
 pack_log.log_write('I','F',v_function,v_step, 'JOB ID: '|| dm_rco_job_id || ' is failed/canceled/inprogress/queued.');
 res:= -99;
 return res;
-end if;
+END IF;
 --
 --V_STEP := 'Step 6';
 --pack_log.log_write('I','F',v_function,v_step, 'Copying results to RESULTS Context, before it gets overridden');
@@ -1468,13 +1526,31 @@ end if;
 --V_STEP := 'Step 7';
 --pack_log.log_write('I','F',v_function,v_step, 'Results COPIED to RESULTS Context');
 
+/* 20210519 - modification of WF for reporting and curing - ends*/
 
 V_STEP := 'Step 8';
 pack_log.log_write('I','F',v_function,v_step, 'Starting second RCO for Context ID: ' || v_context_id);
 curr_time:= sysdate;
-PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'KWT_2_KFH_IFRS9_FULL (Final WS Flooring) (PWS)');
+PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'KWT_1_KFH_IFRS9_FULL (WholeSale Pre-PWS)');
 V_STEP := 'Step 9';
 pack_log.log_write('I','F',v_function,v_step, 'Second RCO completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
+
+select max(job_id) into dm_rco_job_id from job where context_id = v_context_id and job_type = 'RiskConfidence' ;
+select status into dm_rco_job_status from job where job_id = dm_rco_job_id ;
+if(dm_rco_job_status not like 'COMPLETE') then
+V_STEP := 'Step -99';
+pack_log.log_write('I','F',v_function,v_step, 'JOB ID: '|| dm_rco_job_id || ' is failed/canceled/inprogress/queued.');
+res:= -99;
+return res;
+END IF;
+/* 20210519 - modification of WF for reporting and curing - ends*/
+
+V_STEP := 'Step 10';
+pack_log.log_write('I','F',v_function,v_step, 'Starting Third RCO for Context ID: ' || v_context_id);
+curr_time:= sysdate;
+PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'KWT_2_KFH_IFRS9_FULL (Final WS Flooring) (PWS)');
+V_STEP := 'Step 11';
+pack_log.log_write('I','F',v_function,v_step, 'Third RCO completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
 select max(job_id) into dm_rco_job_id from job where context_id = v_context_id and job_type = 'RiskConfidence' ;
 select status into dm_rco_job_status from job where job_id = dm_rco_job_id ;
@@ -1539,7 +1615,7 @@ end if;
 V_STEP := 'Step 4';
 pack_log.log_write('I','F',v_function,v_step, 'Starting first RCO for Context ID: ' || v_context_id);
 curr_time:= sysdate;
-PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'KFH_IFRS9_FULL (Time Bucket for KWT RETAIL)');
+PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'KFH_IFRS9_FULL (Time Bucket for MYS RETAIL)');
 V_STEP := 'Step 5';
 pack_log.log_write('I','F',v_function,v_step, 'First RCO completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
@@ -1710,7 +1786,7 @@ end if;
 V_STEP := 'Step 4';
 pack_log.log_write('I','F',v_function,v_step, 'Starting first RCO for Context ID: ' || v_context_id);
 curr_time:= sysdate;
-PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'KFH_IFRS9_FULL (Time Bucket for KWT RETAIL)');
+PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'KFH_IFRS9_FULL (Time Bucket for BHR RETAIL)');
 V_STEP := 'Step 5';
 pack_log.log_write('I','F',v_function,v_step, 'First RCO completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
@@ -1813,7 +1889,10 @@ end if;
 V_STEP := 'Step 9';
 pack_log.log_write('I','F',v_function,v_step, 'Starting third RCO for Context ID: ' || v_context_id);
 curr_time:= sysdate;
-PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'3KFH_IFRS9_FULL_NON_GCORR_RUN3 (WS Final PWS)');
+/* 20210519 - modification of WF for reporting and curing - starts*/
+--PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'3KFH_IFRS9_FULL_NON_GCORR_RUN3 (WS Final PWS)');
+PACK_KFH_BATCH.KFH_DM_RCO(v_context_id=>v_context_id, v_alm_process_name=>'3_1KFH_IFRS9_FULL_NON_GCORR_RUN3 (WS Final PWS)');
+/* 20210519 - modification of WF for reporting and curing - ends*/
 V_STEP := 'Step 10';
 pack_log.log_write('I','F',v_function,v_step, 'Third RCO completed for Context ID: ' || v_context_id || ' and time taken in minutes is '|| round(((sysdate-curr_time)*100000/60),2));
 
@@ -1906,7 +1985,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_MALAYSIA_RET_RESULTS;
 
 PROCEDURE KFH_MALAYSIA_WHS_RESULTS is
@@ -1978,7 +2057,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_MALAYSIA_WHS_RESULTS;
 
 PROCEDURE KFH_BAHRAIN_RET_RESULTS is
@@ -2050,7 +2129,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_BAHRAIN_RET_RESULTS;
 
 PROCEDURE KFH_BAHRAIN_WHS_RESULTS is
@@ -2122,7 +2201,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_BAHRAIN_WHS_RESULTS;
 
 PROCEDURE KFH_KUWAIT_RET_RESULTS is
@@ -2195,7 +2274,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_KUWAIT_RET_RESULTS;
 
 PROCEDURE KFH_KUWAIT_WHS_RESULTS is
@@ -2278,7 +2357,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_KUWAIT_WHS_RESULTS;
 
 PROCEDURE KFH_MALAYSIA_CBK_WHS_RESULTS is
@@ -2361,7 +2440,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_MALAYSIA_CBK_WHS_RESULTS;
 
 PROCEDURE KFH_MALAYSIA_CBK_RET_RESULTS is
@@ -2434,7 +2513,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_MALAYSIA_CBK_RET_RESULTS;
 
 PROCEDURE KFH_BAHRAIN_CBK_WHS_RESULTS is
@@ -2517,7 +2596,7 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
+  raise_application_error(-20000,'Program failed - Failing Workflow');
 end KFH_BAHRAIN_CBK_WHS_RESULTS;
 
 PROCEDURE KFH_BAHRAIN_CBK_RET_RESULTS is
@@ -2590,30 +2669,60 @@ EXCEPTION
     WHEN OTHERS THEN
 	curr_time:=sysdate;
 	pack_log.log_write('I','F',v_function,'Step -99','Exception occured: ' || SQLCODE || ' :: ' || SQLERRM ||' at ' || to_char(curr_time,'dd-mon-yyyy hh24:mi:ss') || '. Check log_table with function as ' || v_function || ' for progress of the check error script');
-  raise_application_error(-20000, 'Process failed - Failing Workflow');
-END KFH_BAHRAIN_CBK_RET_RESULTS;
+  raise_application_error(-20000,'Program failed - Failing Workflow');
+end KFH_BAHRAIN_CBK_RET_RESULTS;
+
 
 procedure SAE_COPY_RESULTS(src_context_id number default null, dest_context_id number, table_name nvarchar2, filter_condition clob) as
   v_inserted number;
   v_schema_owner  varchar2(128) :=  pack_utils.get_schema_owner;
-  v_current_context_id number:= to_number(sys_context(v_schema_owner, 'CONTEXT_ID'));
-  v_src_context_id NUMBER;
-  v_function varchar2(100) := 'PACK_KFH_BATCH.SAE_COPY_RESULTS';
+  V_CURRENT_CONTEXT_ID number:= TO_NUMBER(SYS_CONTEXT(V_SCHEMA_OWNER, 'CONTEXT_ID'));
+  V_SRC_CONTEXT_ID number;
+  V_FUNCTION varchar2(100) := 'PACK_KFH_BATCH.SAE_COPY_RESULTS';
+  V_SQL varchar2(1000);
+  V_STEP varchar2(100);
+  V_TEMP_TABLE varchar2(100);
+  v_tbl_count number;
   BEGIN     
-    pack_log.log_begin( v_log_key  => v_function, v_log_desc => 'Copy SAE results from one context to another');
-    IF v_current_context_id IS NULL AND src_context_id IS NULL THEN
-      pack_log.log_write('E', 'F', v_function, 'Step -99', 'One context should be opened to define the source context_id on table : ' || table_name  || ' or use src_context_id parameter' , '');
-      RAISE_APPLICATION_ERROR('-20000', 'One context should be opened to define the source context_id on table : ' || table_name  || ' or use src_context_id parameter');
+  pack_log.log_begin( v_log_key  => v_function, v_log_desc => 'Copy SAE results from one context to another');
+  IF v_current_context_id IS NULL AND src_context_id IS NULL THEN
+    pack_log.log_write('E', 'F', v_function, 'Step -99', 'One context should be opened to define the source context_id on table : ' || table_name  || ' or use src_context_id parameter' , '');
+    RAISE_APPLICATION_ERROR('-20000', 'One context should be opened to define the source context_id on table : ' || table_name  || ' or use src_context_id parameter');
+  ELSE
+    IF src_context_id IS NOT NULL THEN
+      v_src_context_id := src_context_id;
     ELSE
-      IF src_context_id IS NOT NULL THEN
-        v_src_context_id := src_context_id;
-      ELSE
-        v_src_context_id := v_current_context_id;
+      v_src_context_id := v_current_context_id;
 		END IF;
 	END IF;
+   
+  PACK_CONTEXT.CONTEXTID_OPEN(DEST_CONTEXT_ID);  
+  V_STEP := 'Step 1';
+  PACK_LOG.LOG_WRITE('I','F', V_FUNCTION,V_STEP,'TABLE: '|| table_name);
+
+  IF upper(table_name) = 'MKT_PD_CURVE_DEF' THEN
+    v_temp_table := upper(table_name) || '_' || dest_context_id || '_TMP_TBL';
+    v_sql := 'SELECT count(1) FROM all_tables WHERE upper(table_name) LIKE ''' || v_temp_table || '''';
+    EXECUTE IMMEDIATE v_sql INTO v_tbl_count ;
+    IF(v_tbl_count > 0) THEN
+      EXECUTE IMMEDIATE 'DROP TABLE '|| v_temp_table;
+    END IF;
   
-  pack_context.contextid_open(dest_context_id);
-  PACK_DB_OBJECT.TRUNCATE_TABLE(table_name);
+    v_sql := 'create table ' || v_temp_table || ' as select * from ' || table_name || ' where pd_curve in (''STAGE_3'',''Stage3_100%_PD'')';
+    execute immediate v_sql;
+    v_sql := 'select count(1) from ' || v_temp_table ;
+    execute immediate v_sql into v_tbl_count;
+
+    v_step := 'Step 2';
+    pack_log.log_write('I', 'F',v_function, v_step, 'Temp table: '|| v_temp_table || ' created with ' || v_tbl_count || ' records, to store existing data of destination context: '|| dest_context_id );
+  end if;
+  
+  V_STEP := 'Step 3';
+  V_SQL := 'select COUNT(1) from ' || table_name ;
+  execute immediate v_sql into v_tbl_count;
+  pack_log.log_write('I', 'F',v_function, v_step, 'before truncate count of tbl=' || v_tbl_count);
+  
+  PACK_DB_OBJECT.TRUNCATE_TABLE(TABLE_NAME);
   
   pack_context.contextid_open(v_src_context_id);  
     v_inserted := large_copy_from(tabname => table_name
@@ -2626,8 +2735,27 @@ procedure SAE_COPY_RESULTS(src_context_id number default null, dest_context_id n
     ,   list_column_name => null
     ,   list_column_formula => null);
 
-pack_log.log_write( v_log_type => 'I', v_application => 'Y', v_function => v_function, v_step => 'Step 1'
-						, v_message => 'Inserted rows := ' || to_char(v_inserted) || ' into ' || table_name || ' inside context ' || to_char(dest_context_id) || ' from context '||to_char(src_context_id), v_tech_func => 'T', v_table_name => '-NA-');
+  PACK_CONTEXT.CONTEXTID_OPEN(DEST_CONTEXT_ID);  
+  V_STEP := 'Step 4';
+  pack_log.log_write('I', 'F',v_function, v_step, 'Inserted rows := ' || to_char(v_inserted) || ' into ' || table_name || ' inside context ' || to_char(dest_context_id) || ' from context '||to_char(v_src_context_id));
+
+  if (upper(table_name)  like 'MKT_PD_CURVE_DEF') then
+    v_sql := 'insert into ' || table_name || ' select * from ' || v_temp_table ;
+    execute immediate V_SQL;
+    commit;
+  
+    V_STEP := 'Step 5';
+    V_SQL := 'select count(1) from ' || V_TEMP_TABLE;
+    execute immediate V_SQL into v_tbl_count;
+    pack_log.log_write('I', 'F',v_function, v_step, v_tbl_count || ' row(s) of ' || table_name || ' table copied from temp table '|| v_temp_table || ' to target table of target context '|| dest_context_id);
+    
+    v_sql := 'drop table ' || v_temp_table;
+    execute immediate v_sql;
+  
+    V_STEP := 'Step 6';
+    PACK_LOG.LOG_WRITE('I', 'F',V_FUNCTION, V_STEP, 'Temp table: ' || V_TEMP_TABLE || ' dropped');
+  end if;
+
 PACK_LOG.LOG_END; 
 EXCEPTION
     WHEN OTHERS THEN
@@ -2691,7 +2819,7 @@ procedure SAE_BAHRAIN_RESULTS_COPY as
   
   pack_context.contextid_open(v_dest_context_bah_ret);
   pack_batch.recheck_table(v_table_4_name);
-  pack_log.log_write('I','F',v_function,'Step 9','Check Error done for ' || v_table_4_name || '.');
+  pack_log.log_write('I','F',v_function,'Step 9','Check error done for ' || v_table_4_name || '.');
   
   end if;
   
